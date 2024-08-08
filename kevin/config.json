@@ -1,0 +1,5 @@
+{
+  "dir": "/Users/mlmnl/Documents/brad",
+  "lint_command": "pnpm lint",
+  "llm": "ollama" 
+}
