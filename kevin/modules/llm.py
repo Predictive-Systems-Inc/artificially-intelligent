@@ -21,21 +21,34 @@ def initialize_prompts():
 # Initialize the config when the module is imported
 initialize_prompts()
 
-def send_message(template: str, message: str):
-    """
-    Sends a message to the AI model using the specified template.
-    """
-    # Retrieves the messages for the specified template
-    # Find the prompt with key 'template' in the prompts
-    messages = prompts.get(template)
-    if messages is None:
-        return f"ERROR: Template not found: {template}"
+def send_message_with_prompt(prompt: str, args: dict):
+    merged_messages = []
+    for message in prompt:
+        # if message[1] is a list, join the list into a string
+        if isinstance(message, dict):
+            message = tuple(message.items())[0]
+        merged_messages.append(message)
 
-    # Creates a chat prompt from the messages
-    chat_prompt = ChatPromptTemplate.from_messages(messages)
+    # # Creates a chat prompt from the messages
+    chat_prompt = ChatPromptTemplate.from_messages(merged_messages)
     # Retrieves the LLM from the model config
     llm = ModelConfig.get_model()
     # Creates a chain of chat models to process the message
     chat_chain = chat_prompt | llm | StrOutputParser()
     # Invokes the chain with the message
-    return chat_chain.invoke({"human": message})
+    response = chat_chain.invoke(args)
+    return response
+
+def send_message(template: str, args: dict):
+    """
+    Sends a message to the AI model using the specified template and argument
+    """
+    # Retrieves the messages for the specified template
+    # Find the prompt with key 'template' in the prompts
+    prompt = prompts.get(template)
+    if prompt is None:
+        return f"ERROR: Template not found: {template}"
+    
+    return send_message_with_prompt(prompt, args)
+
+    

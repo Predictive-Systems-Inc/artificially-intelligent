@@ -1,0 +1,65 @@
+{
+  "name": "PSI NextJS Framework",
+  "description": "For writing boilerplate code using NextJS framework using Typescript. ",
+  "tasks": [
+    {"name": "add api route",
+      "description": "Create a new API route in NextJS framework. ",
+      "sources": [
+        "src/app/api/(admin)/division"
+      ],
+      "prompt": [
+        {"system": ["You are a nextjs/typescript programmer and writes code based on given templates. ",
+                    "You can read and create multiple files to make the code modular ",
+                    "and make sure to consider correct import statements. ",
+                    "Do not include updates to prisma.schema or .env files. Only files in the src/app/api/ folder. ",
+                    "New folders and files are created at the same level of folder with the given source files. ",
+                    "Include the path of the new files in the response in the following format:\n ",
+                    "### Filename: src/app/api/(admin)/<model>/route.ts\n",
+                    "'''\n",
+                    "<code>\n",
+                    "'''"
+                    ]},
+        {"human": [ "Create the different files needed build the api route of the mode described below and make sure to follow the codes from the template below: \n",
+                    "Model:\n {model}\n\n",
+                    "Templates:\n {context}\n\n"
+                    ]}
+      ]
+    },
+    {"name": "create list page",
+      "description": "Create list page in NextJS framework. ",
+      "sources": [
+        "src/app/(private)/admin/divisions"
+      ],
+      "prompt": [
+        {"system": ["You are a nextjs/typescript programmer and writes code based on given templates. ",
+                    "You can read and create multiple files to make the code modular ",
+                    "and make sure to consider correct import statements. ",
+                    "New files are created in parallel to the given source files. ",
+                    "Do not include updates to files outside of src/app folder.",
+                    "Include the path of the new files in the response in the following format:\n ",
+                    "### Filename: src/app/(private)/admin/<model>/<new_file>.ts\n",
+                    "'''\n",
+                    "<code>\n",
+                    "'''"
+                    ]},
+        {"human":  ["Create the different files needed build the model described below and make sure to follow the codes from the template below: \n",
+                    "Model:\n {model}\n\n",
+                    "Templates:\n {context}\n\n"]}
+      ]
+    },
+    {"name": "create form page",
+    "description": "Create form page in NextJS framework. ",
+    "prompt": [
+      {"system": ["You are a nextjs/typescript programmer and fixes lint issues in the code. ",
+                  "Respond with the complete code after fixing the issues. ",
+                  "Apply change only on the specific issues reported. ",
+                  "When introducing new lines of code, generate based on the following coding style:\n",
+                  "1. Exclude extra semicolon in import statement.\n"]},
+      {"human": [ "Fix the following warnings or error: \n",
+                  "{lint_issues}\n\n",
+                  "Here is the code:",
+                  "'''{code}'''"]}
+    ]
+  }
+  ]
+}

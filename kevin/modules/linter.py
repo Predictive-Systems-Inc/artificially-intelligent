@@ -1,21 +1,21 @@
-import json
-import re
 import subprocess
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 import os
 
-from langchain.chat_models.base  import BaseChatModel
+import click
 
-from modules.prompts import create_error_fetcher_rag_prompt, create_error_fixer_rag_prompt
-from modules.utils import create_langchain, extract_code, write_code_to_file
+from modules.llm import send_message
+from modules.utils import extract_code, extract_messages, write_code_to_file
 from config import config
+import logging
+logger = logging.getLogger(__name__)
 
 def execute_lint() -> str:
     """
     Runs the lint command on the specified file 
     and returns the lint output.
     """
-    try: 
+    try:
       command = config.get("lint_command").split()
       working_dir = config.get("dir")
       print(f"Running lint command: {command}")
@@ -34,69 +34,61 @@ def execute_lint() -> str:
         print("Exit Code:", e.returncode)
         print("Standard Error Output:", e.stderr)
         print("Standard Output:", e.stdout)
-        return ""
+        return "" 
 
 def read_lint_output(output: str) -> Dict[str, List[Dict[str, Any]]]:
     """
     Parses the lint output and returns a list of filenames with the lint messages.
     """
     lint_messages = {}
-    filename = ""
+    file_path = ""
 
     for line in output.splitlines():
         if "error" in line.lower():
-            lint_messages[filename].append(line)
+            lint_messages[file_path].append(line)
         elif "warning" in line.lower():
-            lint_messages[filename].append(line)
+            lint_messages[file_path].append(line)
         else:
-            filename = line
-            lint_messages[filename] = []
+            file_path = line
+            lint_messages[file_path] = []
     # remove all empty lists
     lint_messages = {k: v for k, v in lint_messages.items() if v}
     return lint_messages
 
-def fix_lint(code: str, messages: str, llm: BaseChatModel) -> Tuple[str, str]:
+def fix_lint(file_path: str, messages: str) -> bool:
     """
     Invokes the chain to fix the given errors in the code and returns the fixed code and response.
     """
-    chain = create_langchain(llm=llm, prompt=create_error_fixer_rag_prompt())
-    response = chain.invoke(
-        {
-            "context": code,
-            "question": f"Fix the errors/warnings: {messages} in the given code.",
-        }
-    )
-    # print(response)
-    fixed_code = extract_code(response)
-    return fixed_code
+    full_path = os.path.join(config.get("dir"), file_path)
+    attempt = 1
+    with open(full_path, 'r') as file:
+        original_code = file.read()
+    while messages:
+        with open(full_path, 'r') as file:
+            file_contents = file.read()
+        click.echo(f"Fixing lint issues in {file_path} (attempt {attempt})...")
+        response = send_message('lint_fix', 
+                                        {'code': file_contents, 
+                                          'lint_issues': messages})
+        response_messages = extract_messages(response)
+        logger.info(f"Response messages: {response_messages}")
+        fixed_code = extract_code(response)
+        write_code_to_file(file_path=full_path, code=fixed_code)
 
-def lint_and_fix(
-    llm: BaseChatModel,
-    project_dir: str,
-    code: str,
-    file_path: str,
-    max_attempts: int = 3,
-) -> str:
-    """
-    Lints the given code, fixes the errors, and writes the fixed code to a file.
-    Returns the fixed code or the original code if no errors were found or the errors could not be fixed.
-    """
-    for attempt in range(max_attempts):
-      print(f"Linting attempt {attempt + 1}...")
-      lint_output = execute_lint(project_dir=project_dir)
-      print("Linting complete. Getting errors...")
-      errors = get_errors(lint_output=lint_output, file_path=file_path, llm=llm)
-      print(errors)
-
-      if errors == "No errors found." or errors == "I don't know.":
-          print("No errors found. Skipping fix.")
-          print("Updated code...")
-          write_code_to_file(file_path=file_path, code=code)
-          return code
-
-      print("Fixing errors...")
-      code = fix_errors(code=code, errors=errors, llm=llm)
-      print("Updated code...")
-      write_code_to_file(file_path=file_path, code=code)
-    
-    return code
+        lint_result = execute_lint()
+        errors = read_lint_output(lint_result)
+        # check if error has been fixed
+        if errors.get(file_path) is None:
+            click.echo(f"{file_path} has no more lint issues.")
+            click.echo(f"Fix successful after {attempt} attempts.")
+            click.echo(" ")
+            return True
+        else:
+            messages = errors[file_path]
+            attempt += 1
+        if attempt > 3:
+            # restore to original code
+            write_code_to_file(file_path=full_path, code=original_code)
+            click.echo("Fix failed after 3 attempts.")
+            return False
+        

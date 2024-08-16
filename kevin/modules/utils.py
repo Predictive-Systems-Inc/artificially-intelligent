@@ -63,6 +63,14 @@ def get_context_data(paths: List[str]) -> Dict[str, str]:
     return data
 
 
+def extract_messages(data: str) -> List[str]:
+    """
+    Extracts messages from the provided data.
+    """
+    # Remove the code blocks from the data
+    data = re.sub(r"```(?:[a-z]*)\n([\s\S]*?)```", "...", data)
+    return data
+
 def extract_code(data: str) -> Tuple[str, str]:
     """
     Extracts the code from the provided data.
@@ -89,7 +97,7 @@ def write_code_to_file(file_path: str, code: str) -> str:
 
     path = Path(file_path)
     os.makedirs(path.parent, exist_ok=True)
-    path.write_text(code)
+    path.write_text(code+"\n")
     print(f"Code written to {path}")
 
     return str(file_path)

@@ -1,5 +1,6 @@
 {
-  "dir": "/Users/mlmnl/Documents/brad",
+  "dir": "/Users/mlmnl/Documents/GitHub/brad",
   "lint_command": "pnpm lint",
-  "llm": "ollama" 
+  "llm": "azure-openai",
+  "project": "psi-nextjs" 
 }

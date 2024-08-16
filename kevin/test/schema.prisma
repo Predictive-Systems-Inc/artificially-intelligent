@@ -1,0 +1,727 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+generator zod {
+  provider                         = "zod-prisma-types"
+  output                           = "./zod"
+  createOptionalDefaultValuesTypes = true
+  writeNullishInModelTypes         = true
+  createInputTypes                 = false
+  addInputTypeValidation           = false
+  addIncludeType                   = false
+  addSelectType                    = false
+  createPartialTypes               = true
+  createRelationValuesTypes        = true
+}
+
+enum UploadStatus {
+  PENDING
+  PROCESSING
+  FAILED
+  SUCCESS
+}
+
+enum MessageType {
+  MESSAGE
+  IMAGE
+  BUTTONS
+  INSTRUCTION
+  QUICK_REPLIES
+}
+
+enum PartyClassification {
+  FIRST_PARTY
+  SECOND_PARTY
+  THIRD_PARTY
+}
+
+enum LegalEntityType {
+  PERSON
+  ORGANIZATION
+  STATE
+}
+
+enum Sex {
+  MALE
+  FEMALE
+}
+
+enum CivilStatus {
+  SINGLE
+  MARRIED
+  WIDOWED
+  SEPARATED
+  DIVORCED
+}
+
+enum Nationality {
+  FILIPINO
+  FOREIGNER
+}
+
+// Necessary for Auth.js Prisma Adapter (NextAuth)
+model Account {
+  id                       String  @id @default(cuid())
+  userId                   String  @unique
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String? @db.Text
+  access_token             String? @db.Text
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String? @db.Text
+  session_state            String?
+  refresh_token_expires_in Int?
+  user                     User?   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model User {
+  id            String    @id @unique @default(cuid())
+  lastname      String?
+  middlename    String?
+  firstname     String?
+  displayName   String?
+  phoneNumber   String?
+  email         String    @unique
+  password      String?
+  position      String?
+  office        String?
+  emailVerified DateTime?
+  image         String?
+  isEnabled     Boolean   @default(false)
+
+  section       UserSection?
+  otherSections UserOtherSection[]
+
+  sessions         Session[]
+  accounts         Account?
+  userRoles        UserRoles[]
+  userHomeDivision UserHomeDivision?
+  userDivisions    UserDivisions[]
+  files            File[]
+  folders          Folder[]
+  chatSessions     ChatSession[]
+  action           Action[]
+  timeSpent        TimeSpent[]
+  reimbursement    Reimbursement[]
+  document         Document[]
+  cases            Case[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model Section {
+  id         String             @id @default(cuid())
+  name       String
+  users      UserSection[]
+  otherUsers UserOtherSection[]
+}
+
+model UserSection {
+  user      User    @relation(fields: [userId], references: [id])
+  userId    String  @unique
+  section   Section @relation(fields: [sectionId], references: [id])
+  sectionId String
+
+  @@id([userId, sectionId])
+  @@index([sectionId])
+}
+
+model UserOtherSection {
+  user      User    @relation(fields: [userId], references: [id])
+  userId    String
+  section   Section @relation(fields: [sectionId], references: [id])
+  sectionId String
+
+  @@id([userId, sectionId])
+  @@index([sectionId])
+}
+
+model Role {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  userRoles   UserRoles[]
+  permissions String?
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+}
+
+// https://www.prisma.io/docs/orm/prisma-schema/data-model/relations/many-to-many-relations
+model UserRoles {
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  role       Role     @relation(fields: [roleId], references: [id])
+  roleId     String
+  assignedAt DateTime @default(now())
+  assignedBy String
+
+  @@id([userId, roleId])
+  @@index([roleId])
+}
+
+model SystemCodes {
+  id               String          @id @default(cuid())
+  name             String
+  key              String          @unique
+  category         String
+  caseStatus       Case[]          @relation("CaseStatus")
+  casePriority     Case[]          @relation("CasePriority")
+  partyType        CaseParty[]
+  actionStatus     Action[]
+  expenseType      Reimbursement[]
+  documentType     Document[]      @relation("DocumentType")
+  documentCategory Document[]      @relation("DocumentCategory")
+  documentVia      Document[]      @relation("DocumentVia")
+  documentStatus   Document[]      @relation("DocumentStatus")
+  clientStatus     Client[]        @relation("ClientStatus")
+  clientType       Client[]        @relation("ClientType")
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+}
+
+enum DivisionType {
+  DIVISION
+  CATEGORY_SECTION
+  OLD_DIVISION
+}
+
+model Division {
+  id          String             @id @default(cuid())
+  name        String
+  type        DivisionType       @default(DIVISION)
+  address     String?
+  members     UserDivisions[]
+  homeMembers UserHomeDivision[]
+
+  parentId       String?    @map("parent_id")
+  parentDivision Division?  @relation("ChildDivisions", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childDivisions Division[] @relation("ChildDivisions")
+  cases          Case[]
+  createdAt      DateTime?  @default(now())
+  updatedAt      DateTime?  @updatedAt
+  deletedAt      DateTime?
+  //  @@unique([id, name])
+
+  @@index([parentId])
+}
+
+model UserDivisions {
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  division   Division @relation(fields: [divisionId], references: [id])
+  divisionId String
+
+  @@id([userId, divisionId])
+  @@index([divisionId])
+}
+
+model UserHomeDivision {
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String   @unique
+  division   Division @relation(fields: [divisionId], references: [id])
+  divisionId String
+
+  @@id([userId, divisionId])
+  @@index([divisionId])
+}
+
+model Category {
+  id   String @id @default(cuid())
+  name String
+
+  parentId       String?    @map("parent_id")
+  parentCategory Category?  @relation("ChildCategory", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childCategory  Category[] @relation("ChildCategory")
+
+  status    String
+  case      Case[]
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@index([parentId])
+}
+
+model ChatSession {
+  id String @id @default(cuid())
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  expiresAt DateTime
+
+  User   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  File   File?   @relation(fields: [fileId], references: [id])
+  fileId String?
+
+  Message Message[]
+
+  @@index([userId])
+  @@index([fileId])
+  @@map("ChatSession")
+}
+
+model Folder {
+  id   String @id @default(cuid())
+  name String
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+
+  parentId String? @map("parent_id")
+  parent   Folder? @relation("ChildFolders", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  level    Int     @default(0)
+
+  User   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  folders Folder[] @relation("ChildFolders")
+  files   File[]
+  tags    Tags[]
+
+  @@index([parentId])
+  @@index([userId])
+}
+
+model File {
+  id           String       @id @default(cuid())
+  name         String
+  path         String
+  url          String
+  size         Float
+  sourceRef    String?
+  uploadStatus UploadStatus @default(PENDING)
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+
+  User   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  Session ChatSession[]
+  tags    Tags[]
+
+  folderId String @map("folder_id")
+  folder   Folder @relation(fields: [folderId], references: [id])
+  level    Int    @default(0)
+
+  @@index([userId])
+  @@index([folderId])
+}
+
+model LookupCategory {
+  id   String @id @default(cuid())
+  name String
+
+  createdAt     DateTime?                @default(now())
+  updatedAt     DateTime?                @updatedAt
+  LookupValue   LookupValue[]
+  limitChoices  FieldExtractionRule[]    @relation(name: "limitChoices")
+  limitAnswerTo FieldExtractionRule[]    @relation(name: "limitAnswerTo")
+  documentRules DocumentExtractionRule[]
+
+  @@unique([name])
+}
+
+model LookupValue {
+  id          String    @id @default(cuid())
+  key         String
+  value       String
+  sortOrder   Int       @default(0)
+  ref         String?
+  numberValue Int?      @default(0)
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
+
+  categoryId String         @map("category_id")
+  category   LookupCategory @relation(fields: [categoryId], references: [id])
+
+  @@unique([key])
+  @@index([categoryId])
+  @@index([ref])
+  @@index([key])
+}
+
+model DocumentExtractionRule {
+  id             String          @id @default(cuid())
+  name           String
+  documentType   LookupCategory? @relation(fields: [documentTypeId], references: [id])
+  documentTypeId String?
+  description    String?
+
+  createdAt DateTime?             @default(now())
+  updatedAt DateTime?             @updatedAt
+  rules     FieldExtractionRule[]
+
+  @@index([documentTypeId])
+}
+
+model FieldExtractionRule {
+  id              String          @id @default(cuid())
+  fieldName       String
+  prompt          String
+  limitAnswerTo   LookupCategory? @relation(name: "limitAnswerTo", fields: [limitAnswerToId], references: [id])
+  limitAnswerToId String?
+  limitChoices    LookupCategory? @relation(name: "limitChoices", fields: [limitChoicesId], references: [id])
+  limitChoicesId  String?
+  verifyUsing     String?
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+
+  documentExtractionRuleId String                 @map("document_type_id")
+  documentExtractionRule   DocumentExtractionRule @relation(fields: [documentExtractionRuleId], references: [id])
+
+  @@index([documentExtractionRuleId])
+  @@index([limitChoicesId])
+  @@index([limitAnswerToId])
+}
+
+model Message {
+  id            String      @id @default(cuid())
+  text          String      @db.Text()
+  type          MessageType @default(MESSAGE)
+  isUserMessage Boolean     @default(false)
+  isAnonymous   Boolean     @default(false)
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+
+  Session   ChatSession? @relation(fields: [sessionId], references: [id])
+  sessionId String?
+
+  @@index([sessionId])
+}
+
+model MessageTemplate {
+  id           String      @id @default(cuid())
+  text         String      @db.Text()
+  type         MessageType @default(MESSAGE)
+  templateName String
+  sortOrder    Int
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+}
+
+model Tags {
+  id       String  @id @default(cuid())
+  name     String
+  case     Case?   @relation(fields: [caseId], references: [id])
+  action   Action? @relation(fields: [actionId], references: [id])
+  caseId   String?
+  actionId String?
+
+  files   File[]
+  folders Folder[]
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+
+  @@index([caseId])
+  @@index([actionId])
+}
+
+model Nature {
+  id    String @id @default(cuid())
+  name  String @db.Text()
+  cases Case[]
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+}
+
+model LastAction {
+  id       String @id @default(cuid())
+  case     Case   @relation(fields: [caseId], references: [id])
+  action   Action @relation(fields: [actionId], references: [id])
+  caseId   String @unique
+  actionId String @unique
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+}
+
+model LegalEntity {
+  id      String           @id @default(cuid())
+  name    String
+  type    LegalEntityType?
+  parties Party[]
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+}
+
+model CaseParty {
+  id                  String               @id @default(cuid())
+  case                Case?                @relation(fields: [caseId], references: [id])
+  party               Party?               @relation(fields: [partyId], references: [id])
+  partyType           SystemCodes?         @relation(fields: [partyTypeKey], references: [key])
+  partyClassification PartyClassification?
+  caseId              String?
+  partyId             String?
+  partyTypeKey        String?
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+
+  @@index([caseId])
+  @@index([partyId])
+  @@index([partyTypeKey])
+}
+
+model Case {
+  id             String          @id @default(cuid())
+  title          String          @db.Text()
+  caseNumber     String          @db.Text()
+  assignedTo     User?           @relation(fields: [assignedToId], references: [id])
+  filingDate     DateTime
+  status         SystemCodes?    @relation(fields: [statusKey], references: [key], name: "CaseStatus")
+  category       Category?       @relation(fields: [categoryId], references: [id])
+  division       Division?       @relation(fields: [divisionId], references: [id])
+  nature         Nature?         @relation(fields: [natureId], references: [id])
+  priority       SystemCodes?    @relation(fields: [priorityKey], references: [key], name: "CasePriority")
+  caseParties    CaseParty[]
+  tags           Tags[]
+  documents      Document[]
+  actions        Action[]
+  lastAction     LastAction?
+  timeSpents     TimeSpent[]
+  reimbursements Reimbursement[]
+  assignedToId   String?
+  statusKey      String?
+  priorityKey    String?
+  categoryId     String?
+  divisionId     String?
+  natureId       String?
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+
+  @@index([natureId])
+  @@index([divisionId])
+  @@index([categoryId])
+  @@index([assignedToId])
+  @@index([statusKey])
+  @@index([priorityKey])
+}
+
+model Party {
+  id            String       @id @default(cuid())
+  legalEntity   LegalEntity? @relation(fields: [legalEntityId], references: [id])
+  caseParties   CaseParty[]
+  name          String       @db.Text()
+  firstName     String       @db.Text()
+  middleName    String       @db.Text()
+  lastName      String       @db.Text()
+  alias         String       @db.Text()
+  address       String       @db.Text()
+  photoUrl      String       @db.Text()
+  nationality   Nationality?
+  sex           Sex?
+  civilStatus   CivilStatus?
+  remarks       String       @db.Text()
+  legalEntityId String?
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+
+  @@index([legalEntityId])
+}
+
+model Document {
+  id           String       @id @default(cuid())
+  date         DateTime     @default(now())
+  party        String       @db.Text()
+  type         SystemCodes? @relation(fields: [typeKey], references: [key], name: "DocumentType")
+  category     SystemCodes? @relation(fields: [categoryKey], references: [key], name: "DocumentCategory")
+  via          SystemCodes? @relation(fields: [viaKey], references: [key], name: "DocumentVia")
+  status       SystemCodes? @relation(fields: [statusKey], references: [key], name: "DocumentStatus")
+  title        String       @db.Text()
+  remarks      String       @db.Text()
+  case         Case?        @relation(fields: [caseId], references: [id])
+  uploadedBy   User?        @relation(fields: [uploadedById], references: [id])
+  path         String?      @db.Text()
+  caseId       String?
+  uploadedById String?
+  typeKey      String?
+  categoryKey  String?
+  viaKey       String?
+  statusKey    String?
+
+  createdAt     DateTime? @default(now())
+  updatedAt     DateTime? @updatedAt
+  deletedAt     DateTime?
+  systemCodesId String?
+
+  @@index([caseId])
+  @@index([uploadedById])
+  @@index([typeKey])
+  @@index([categoryKey])
+  @@index([viaKey])
+  @@index([statusKey])
+}
+
+model Action {
+  id            String       @id @default(cuid())
+  title         String       @db.Text()
+  startDate     DateTime
+  dueDate       DateTime
+  completedDate DateTime?
+  status        SystemCodes? @relation(fields: [statusId], references: [key])
+  tags          Tags[]
+  remarks       String       @db.Text()
+  case          Case?        @relation(fields: [caseId], references: [id])
+  user          User?        @relation(fields: [userId], references: [id])
+  timeSpent     TimeSpent?
+  lastAction    LastAction?
+  statusId      String?
+  caseId        String?
+  userId        String?
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+
+  @@index([caseId])
+  @@index([userId])
+  @@index([statusId])
+}
+
+model TimeSpent {
+  id       String  @id @default(cuid())
+  hours    Float   @default(0)
+  remarks  String  @db.Text()
+  case     Case?   @relation(fields: [caseId], references: [id])
+  user     User?   @relation(fields: [userId], references: [id])
+  action   Action? @relation(fields: [actionId], references: [id])
+  actionId String? @unique
+  caseId   String?
+  userId   String?
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+
+  @@index([caseId])
+  @@index([userId])
+}
+
+model Reimbursement {
+  id             String       @id @default(cuid())
+  date           DateTime     @default(now())
+  expenseType    SystemCodes? @relation(fields: [expenseTypeKey], references: [key])
+  description    String       @db.Text()
+  amount         Float
+  remarks        String       @db.Text()
+  case           Case?        @relation(fields: [caseId], references: [id])
+  user           User?        @relation(fields: [userId], references: [id])
+  expenseTypeKey String?
+  caseId         String?
+  userId         String?
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+
+  @@index([userId])
+  @@index([caseId])
+  @@index([expenseTypeKey])
+}
+
+model Client {
+  id          String      @id @default(cuid())
+  title       String?
+  firstName   String
+  lastName    String
+  middleName  String
+  suffix      String?
+  displayName String?
+  companyName String
+  email       String      @unique
+  phone       String?
+  mobile      String
+  other       String?
+  website     String?
+  address     String
+  address2    String?
+  city        String
+  province    String
+  zipCode     String
+  country     String
+  status      SystemCodes @relation(fields: [statusId], references: [id], name: "ClientStatus")
+  type        SystemCodes @relation(fields: [typeId], references: [id], name: "ClientType")
+  statusId    String
+  typeId      String
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+
+  @@index([statusId])
+  @@index([typeId])
+}
+
+model AuditLog {
+  id        String    @id @default(cuid())
+  entity    String
+  message   String    @db.Text
+  action    String
+  user      String?
+  createdAt DateTime? @default(now())
+
+  @@index([entity, id])
+}
