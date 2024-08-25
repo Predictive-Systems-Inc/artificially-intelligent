@@ -1,6 +1,6 @@
 {
   "dir": "/Users/mlmnl/Documents/GitHub/brad",
-  "lint_command": "pnpm lint",
+  "lint_command": "npm run lint",
   "llm": "azure-openai",
   "project": "psi-nextjs" 
 }
