@@ -9,15 +9,19 @@ from modules.utils import extract_code, extract_messages, write_code_to_file
 logger = logging.getLogger(__name__)
 
 def read_sources(template_dirs):
-    # traverse all the directory and include all the files in the context
     context = {}
     base_dir = config.get('dir')
+    
     for template_dir in template_dirs:
-        template_dir = os.path.join(base_dir, template_dir)
-        for root, _, files in os.walk(template_dir):
+        full_template_dir = os.path.join(base_dir, template_dir)
+        
+        for root, _, files in os.walk(full_template_dir):
             for file in files:
-                with open(os.path.join(root, file), 'r') as f:
-                    context[file] = f.read()
+                file_path = os.path.join(root, file)
+                relative_path = os.path.relpath(file_path, base_dir)
+                with open(file_path, 'r') as f:
+                    context[relative_path] = f.read()
+    
     return context
 
 def find_matching_files(keyword):
@@ -84,6 +88,7 @@ def perform_task(task, model):
     prompt = task.get('prompt')
     logger.info(f"Prompt: {prompt}")
     logger.info(f"Context: {context_str}")
+    logger.info(f"Model: {model_str}")
     response = send_message_with_prompt(prompt, 
                               {'context': context_str, 
                                'model': model_str})

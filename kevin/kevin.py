@@ -54,7 +54,7 @@ def generate_code(template):
             click.echo("0. back")
             # prompt user to select a task
             task_index = click.prompt(f"Enter your choice (1-{len(tasks)}) ", type=int)
-            click.echo(f"Selected task: {project_data.get('tasks')[task_index].get('name')}")
+            click.echo(f"Selected task: {project_data.get('tasks')[task_index-1].get('name')}")
             if task_index == 0:
                 return
             
