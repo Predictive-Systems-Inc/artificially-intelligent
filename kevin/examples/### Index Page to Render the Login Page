@@ -1,0 +1,17 @@
+// Replace pages/_app.tsx with the actual file path
+### Filename : pages/_app.tsx
+import React from 'react';
+import { SessionProvider } from 'next-auth/react';
+import Head from 'next/head';
+import LoginPage from '../components/LoginPage';
+
+export default function App({ Component, pageProps }) {
+  return (
+    <SessionProvider session={pageProps.session}>
+      <Head>
+        <title>Login Page</title>
+      </Head>
+      <Component {...pageProps} />
+    </SessionProvider>
+  );
+}

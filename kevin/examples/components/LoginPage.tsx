@@ -1,23 +1,22 @@
 import React from 'react';
 
-interface LoginFormProps {
-  onLogin: (event: React.FormEvent<HTMLFormElement>) => void;
-}
+interface Props {}
 
-const LoginPage = ({ onLogin }: LoginFormProps) => {
-  const handleLoginSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+const LoginPage = ({}: Props) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onLogin(event);
+    // Handle form submission logic here
   };
 
   return (
-    <div className="login-container">
-      <form onSubmit={handleLoginSubmit}>
-        <label>Email:</label>
-        <input type="email" name="email" />
+    <div>
+      <form onSubmit={handleSubmit}>
+        <label>Email:</label> <!-- updated from "Username:" to "Email:" -->
+        <input type="text" name="username" />
         <br />
         <label>Password:</label>
         <input type="password" name="password" />
+        <br />
         <button type="submit">Login</button>
       </form>
     </div>

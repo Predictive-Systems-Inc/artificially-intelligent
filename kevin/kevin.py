@@ -237,6 +237,5 @@ def begin(dir):
         except ValueError:
             click.echo("Invalid input. Please enter a number.")
 
-
 if __name__ == '__main__':
     begin()

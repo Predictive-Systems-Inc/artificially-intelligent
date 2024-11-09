@@ -20,7 +20,8 @@
                     "<code>\n",
                     "'''"
                     ]},
-        {"human": [ "Create the different files needed build the api route of the mode described below and make sure to follow the codes from the template below: \n",
+        {"human": [ "Create the different files needed build the api route of the mode described below. ",
+                    "Make sure to include all the fields in the model and follow the codes from the template below: \n",
                     "Model:\n {model}\n\n",
                     "Templates:\n {context}\n\n"
                     ]}
