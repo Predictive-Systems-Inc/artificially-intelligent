@@ -11,7 +11,7 @@ const LoginPage = ({}: Props) => {
   return (
     <div>
       <form onSubmit={handleSubmit}>
-        <label>Email:</label> <!-- updated from "Username:" to "Email:" -->
+        <label>Username:</label> {/* updated from "Email:" to "Username:" */}
         <input type="text" name="username" />
         <br />
         <label>Password:</label>
