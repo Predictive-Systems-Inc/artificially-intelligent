@@ -1,10 +1,6 @@
-# Multimodal Realtime App with Gemini 2.0 by Next.js Framework
+# Multimodal Doctor Pre-screening App in Next.js
 
-A demonstration project showing how to build a realtime multimodal application using Google's Gemini 2.0 API and Next.js. This app can process audio, video, and generate transcripts in realtime.
-
-![Watch Demo Video](./thumbnail.jpg)
-
-[Watch the Tutorial Video](https://youtu.be/YUfer6xyExY)
+S/O to Yeyulabs (original code)
 
 ## Features
 
@@ -14,7 +10,6 @@ A demonstration project showing how to build a realtime multimodal application u
 
 ## Architecture
 
-![Block Diagram](./diagram.jpg)
 
 ## Prerequisites
 
@@ -23,20 +18,14 @@ A demonstration project showing how to build a realtime multimodal application u
 
 ## Getting Started
 
-1. Clone the repository
-```bash
-git clone https://github.com/yeyu2/gemini-nextjs.git
-cd gemini-nextjs
-```
-
-2. Install dependencies
+1. Install dependencies
 ```bash
 npm install
 # or
 yarn install
 ```
 
-3. Set up environment variables
+2. Set up environment variables
 ```bash
 cp .env.example .env.local
 ```
@@ -45,7 +34,7 @@ Add your Gemini API key to `.env.local`:
 GEMINI_API_KEY=your_api_key_here
 ```
 
-4. Run the development server
+3. Run the development server
 ```bash
 npm run dev
 # or
