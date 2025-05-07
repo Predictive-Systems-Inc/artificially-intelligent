@@ -6,7 +6,7 @@
 
 ## <h1 align="center" id="heading"> 👋 Welcome to the AI Engineering Challenge</h1>
 
-## 🤖 Your First LLM App
+## 🤖 Your First Vibe Coding LLM Application
 
 > If you need an introduction to `git`, or information on how to set up API keys for the tools we'll be using in this repository - check out our [Interactive Dev Environment for LLM Development](https://github.com/AI-Maker-Space/Interactive-Dev-Environment-for-AI-Engineers) which has everything you'd need to get started in this repository!
 
@@ -29,16 +29,16 @@ That's it! Head to the next step and start building your application!
 <details>
   <summary>🏗️ Cloning This Repository</summary>
 
-1. Clone [this](https://github.com/AI-Maker-Space/Beyond-ChatGPT/) repo.
+1. Clone [this](https://github.com/AI-Maker-Space/The-AI-Engineering-Challenge) repo.
 
      ``` bash
-     git clone https://github.com/AI-Maker-Space/Beyond-ChatGPT.git
+     git clone git@github.com:AI-Maker-Space/The-AI-Engineering-Challenge.git
      ```
 
 2. Open the freshly cloned repository inside Cursor!
 
      ```bash
-     cd Beyond-ChatGPT
+     cd The-AI-Engineering-Challenge
      cursor .
      ```
 
