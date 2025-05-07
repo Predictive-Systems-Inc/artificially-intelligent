@@ -27,12 +27,16 @@ That's it! Head to the next step and start building your application!
 
 
 <details>
-  <summary>🏗️ Cloning This Repository</summary>
+  <summary>🏗️ Forking & Cloning This Repository</summary>
 
-1. Clone [this](https://github.com/AI-Maker-Space/The-AI-Engineer-Challenge) repo.
+1. Fork [this](https://github.com/AI-Maker-Space/The-AI-Engineer-Challenge) repo!
+
+     ![image](https://i.imgur.com/bhjySNh.png)
+
+1. Clone your newly created repo.
 
      ``` bash
-     git clone git@github.com:AI-Maker-Space/The-AI-Engineer-Challenge.git
+     git clone git@github.com:<YOUR GITHUB USERNAME>/The-AI-Engineer-Challenge.git
      ```
 
 2. Open the freshly cloned repository inside Cursor!
