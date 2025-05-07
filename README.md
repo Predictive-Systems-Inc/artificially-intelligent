@@ -1,37 +1,23 @@
----
-title: BeyondChatGPT Demo
-emoji: 📉
-colorFrom: pink
-colorTo: yellow
-sdk: docker
-pinned: false
-app_port: 7860
----
-
 <p align = "center" draggable=”false” ><img src="https://github.com/AI-Maker-Space/LLM-Dev-101/assets/37101144/d1343317-fa2f-41e1-8af1-1dbb18399719" 
      width="200px"
      height="auto"/>
 </p>
 
 
-## <h1 align="center" id="heading">:wave: Welcome to Beyond ChatGPT!!</h1>
-
-For a step-by-step YouTube video walkthrough, watch this! [Deploying Chainlit app on Hugging Face](https://www.youtube.com/live/pRbbZcL0NMI?si=NAYhMZ_suAY84f06&t=2119)
-
-![Beyond ChatGPT: Build Your First LLM Application](https://github.com/AI-Maker-Space/Beyond-ChatGPT/assets/48775140/cb7a74b8-28af-4d12-a008-8f5a51d47b4c)
+## <h1 align="center" id="heading"> 👋 Welcome to the AI Engineering Challenge</h1>
 
 ## 🤖 Your First LLM App
 
-> If you need an introduction to `git`, or information on how to set up API keys for the tools we'll be using in this repository - check out our [Interactive Dev Environment for LLM Development](https://github.com/AI-Maker-Space/Interactive-Dev-Environment-for-LLM-Development/tree/main) which has everything you'd need to get started in this repository!
+> If you need an introduction to `git`, or information on how to set up API keys for the tools we'll be using in this repository - check out our [Interactive Dev Environment for LLM Development](https://github.com/AI-Maker-Space/Interactive-Dev-Environment-for-AI-Engineers) which has everything you'd need to get started in this repository!
 
-In this repository, we'll walk you through the steps to create a Large Language Model (LLM) application using Chainlit, then containerize it using Docker, and finally deploy it on Huggingface Spaces.
+In this repository, we'll walk you through the steps to create a LLM (Large Language Model) powered application with a vibe-coded frontend!
 
 Are you ready? Let's get started!
 
 <details>
-  <summary>🖥️ Accessing "gpt-3.5-turbo" (ChatGPT) like a developer</summary>
+  <summary>🖥️ Accessing "gpt-4.1-mini" (ChatGPT) like a developer</summary>
 
-1. Head to [this notebook](https://colab.research.google.com/drive/1mOzbgf4a2SP5qQj33ZxTz2a01-5eXqk2?usp=sharing) and follow along with the instructions!
+1. Head to [this notebook](https://colab.research.google.com/drive/1sT7rzY_Lb1_wS0ELI1JJfff0NUEcSD72?usp=sharing) and follow along with the instructions!
 
 2. Complete the notebook and try out your own system/assistant messages!
 
@@ -41,160 +27,92 @@ That's it! Head to the next step and start building your application!
 
 
 <details>
-  <summary>🏗️ Building Your First LLM App</summary>
+  <summary>🏗️ Cloning This Repository</summary>
 
-1. Clone [this](https://github.com/AI-Maker-Space/Beyond-ChatGPT/tree/main) repo.
+1. Clone [this](https://github.com/AI-Maker-Space/Beyond-ChatGPT/) repo.
 
      ``` bash
      git clone https://github.com/AI-Maker-Space/Beyond-ChatGPT.git
      ```
 
-2. Navigate inside this repo
-     ``` bash
+2. Open the freshly cloned repository inside Cursor!
+
+     ```bash
      cd Beyond-ChatGPT
+     cursor .
      ```
 
-3. Create a virtual environment and install dependencies.
-     ``` bash
-     # Create a virtual environment
-     uv venv
+3. Check out the existing backend code found in `/api/app.py`
 
-     # Activate the virtual environment
-     # On macOS/Linux:
-     source .venv/bin/activate
-     # On Windows:
-     # .venv\Scripts\activate
-
-     # Install dependencies from pyproject.toml
-     uv sync
-     ``` 
-
-4. Open your `.env` file. Replace the `###` in your `.env` file with your OpenAI Key and save the file.
-     ``` bash
-     OPENAI_API_KEY=sk-###
-     ```
-
-5. Let's try deploying it locally. Make sure you're in the activated virtual environment. Run the app using Chainlit. This may take a minute to run.
-     ``` bash
-     uv run chainlit run app.py -w
-     ```
-
-<p align = "center" draggable="false">
-<img src="https://github.com/AI-Maker-Space/LLMOps-Dev-101/assets/37101144/54bcccf9-12e2-4cef-ab53-585c1e2b0fb5"> 
-</p>
-
-Great work! Let's see if we can interact with our chatbot.
-
-<p align = "center" draggable="false">
-<img src="https://github.com/AI-Maker-Space/LLMOps-Dev-101/assets/37101144/854e4435-1dee-438a-9146-7174b39f7c61"> 
-</p> 
-
-Awesome! Time to throw it into a docker container and prepare it for shipping!
 </details>
 
-
-
 <details>
-  <summary>🐳 Containerizing our App</summary>
+  <summary>😎 Vibe Coding a Front End</summary>
 
-1. Let's build the Docker image. We'll tag our image as `llm-app` using the `-t` parameter. The `.` at the end means we want all of the files in our current directory to be added to our image. Note that our Dockerfile is set up to use uv for dependency management and will install all the packages defined in our pyproject.toml file.
-     
-     ``` bash
-     docker build -t llm-app .
-     ```
+1. Use `Command-L` or `CTRL-L` to open the Cursor chat console. 
 
-2. Run and test the Docker image locally using the `run` command. The `-p`parameter connects our **host port #** to the left of the `:` to our **container port #** on the right.
-    
-     ``` bash
-     docker run -p 7860:7860 llm-app
-     ```
+2. Set the chat settings to the following:
 
-3. Visit http://localhost:7860 in your browser to see if the app runs correctly.
+     ![image](https://i.imgur.com/LSgRSgF.png)
 
-<p align = "center" draggable="false">
-<img src="https://github.com/AI-Maker-Space/LLMOps-Dev-101/assets/37101144/2c764f25-09a0-431b-8d28-32246e0ca1b7"> 
-</p>
+3. Modify the rules (found in `.cursor/rules`) to your liking. (Give theme suggestions, and more, in `frontend-rule.mdc`)
 
-Great! Time to ship!
+4. Ask Cursor to create a frontend for your application. Iterate as much as you like!
+
+5. Run the frontend using the instructions Cursor provided. 
+
+> NOTE: If you run into any errors, copy and paste them back into the Cursor chat window - and ask Cursor to fix them!
+
 </details>
 
-
 <details>
-  <summary>🚀 Deploying Your First LLM App</summary>
+  <summary>🚀 Deploying Your First LLM-powered Application with Vercel</summary>
 
-1. Let's create a new Huggingface Space. Navigate to [Huggingface](https://huggingface.co) and click on your profile picture on the top right. Then click on `New Space`.
+1. Ensure you have signed into [Vercel](https://vercel.com/) with your GitHub account.
 
-<p align = "center" draggable=”false”>
-<img src="https://github.com/AI-Maker-Space/LLMOps-Dev-101/assets/37101144/f0656408-28b8-4876-9887-8f0c4b882bae"> 
-</p>
+2. Ensure you have `npm` (this may have been installed in the previous vibe-coding step!) - if you need help with that, ask Cursor!
 
-2. Setup your space as shown below:
-   
-- Owner: Your username
-- Space Name: `llm-app`
-- License: `Openrail`
-- Select the Space SDK: `Docker`
-- Docker Template: `Blank`
-- Space Hardware: `CPU basic - 2 vCPU - 16 GB - Free`
-- Repo type: `Public`
+3. Run the command:
 
-<p align = "center" draggable=”false”>
-<img src="https://github.com/AI-Maker-Space/LLMOps-Dev-101/assets/37101144/8f16afd1-6b46-4d9f-b642-8fefe355c5c9"> 
-</p>
+     ```bash
+     npm install -g vercel
+     ```
 
-3. You should see something like this. We're now ready to send our files to our Huggingface Space. After cloning, move your files to this repo and push it along with your docker file. You DO NOT need to create a Dockerfile. Make sure NOT TO push your `.env` file. This should automatically be ignored.
+4. Run the command:
 
-<p align = "center" draggable=”false”>
-<img src="https://github.com/AI-Maker-Space/LLMOps-Dev-101/assets/37101144/cbf366e2-7613-4223-932a-72c67a73f9c6"> 
-</p>
+     ```bash
+     vercel
+     ```
 
-4. After pushing all files, navigate to the settings in the top right to add your OpenAI API key.
+5. Follow the in-terminal instructions. (Below is an example of what you will see!)
 
-<p align = "center" draggable=”false”>
-<img src="https://github.com/AI-Maker-Space/LLMOps-Dev-101/assets/37101144/a1123a6f-abdd-4f76-bea4-39acf9928762"> 
-</p>
+     ![image](https://i.imgur.com/D1iKGCq.png)
 
-5. Scroll down to `Variables and secrets` and click on `New secret` on the top right.
+6. Once the build is completed - head to the provided link and try out your app!
 
-<p align = "center" draggable=”false”>
-<img src="https://github.com/AI-Maker-Space/LLMOps-Dev-101/assets/37101144/a8a4a25d-752b-4036-b572-93381370c2db"> 
-</p>
+> NOTE: Remember, if you run into any errors - ask Cursor to help you fix them!
 
-6. Set the name to `OPENAI_API_KEY` and add your OpenAI key under `Value`. Click save.
+</details>
 
-<p align = "center" draggable=”false”>
-<img src="https://github.com/AI-Maker-Space/LLMOps-Dev-101/assets/37101144/0a897538-1779-48ff-bcb4-486af30f7a14"> 
-</p>
+### 🎉 Congratulations! 
 
-7. To ensure your key is being used, we recommend you `Restart this Space`.
-
-<p align = "center" draggable=”false”>
-<img src="https://github.com/AI-Maker-Space/LLMOps-Dev-101/assets/37101144/fb1d83af-6ebe-4676-8bf5-b6d88f07c583"> 
-</p>
-
-8. Congratulations! You just deployed your first LLM! 🚀🚀🚀 Get on linkedin and post your results and experience! Make sure to tag us at #AIMakerspace !
+You just deployed your first LLM-powered application! 🚀🚀🚀 Get on linkedin and post your results and experience! Make sure to tag us at @AIMakerspace!
 
 Here's a template to get your post started!
 
 ```
 🚀🎉 Exciting News! 🎉🚀
 
-🏗️ Today, I'm thrilled to announce that I've successfully built and shipped my first-ever LLM using the powerful combination of Chainlit, Docker, and the OpenAI API! 🖥️
+🏗️ Today, I'm thrilled to announce that I've successfully built and shipped my first-ever LLM using the powerful combination of , and the OpenAI API! 🖥️
 
 Check it out 👇
 [LINK TO APP]
 
-A big shoutout to the @**AI Makerspace** for all making this possible. Couldn't have done it without the incredible community there. 🤗🙏
+A big shoutout to the @AI Makerspace for all making this possible. Couldn't have done it without the incredible community there. 🤗🙏
 
 Looking forward to building with the community! 🙌✨ Here's to many more creations ahead! 🥂🎉
 
 Who else is diving into the world of AI? Let's connect! 🌐💡
 
-#FirstLLM #Chainlit #Docker #OpenAI #AIMakerspace
+#FirstLLMApp 
 ```
-
-</details>
-
-<p></p>
-
-### That's it for now!  And so it begins.... :)
