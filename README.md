@@ -4,7 +4,7 @@
 </p>
 
 
-## <h1 align="center" id="heading"> 👋 Welcome to the AI Engineering Challenge</h1>
+## <h1 align="center" id="heading"> 👋 Welcome to the AI Engineer Challenge</h1>
 
 ## 🤖 Your First Vibe Coding LLM Application
 
@@ -29,10 +29,10 @@ That's it! Head to the next step and start building your application!
 <details>
   <summary>🏗️ Cloning This Repository</summary>
 
-1. Clone [this](https://github.com/AI-Maker-Space/The-AI-Engineering-Challenge) repo.
+1. Clone [this](https://github.com/AI-Maker-Space/The-AI-Engineer-Challenge) repo.
 
      ``` bash
-     git clone git@github.com:AI-Maker-Space/The-AI-Engineering-Challenge.git
+     git clone git@github.com:AI-Maker-Space/The-AI-Engineer-Challenge.git
      ```
 
 2. Open the freshly cloned repository inside Cursor!
@@ -47,6 +47,29 @@ That's it! Head to the next step and start building your application!
 </details>
 
 <details>
+  <summary> Setting Up for Vibe Coding Success </summary>
+
+While it is a bit counter-intuitive to set things up before jumping into vibe-coding - it's important to remember that there exists a gradient betweeen AI-Assisted Development and Vibe-Coding. We're only reaching *slightly* into AI-Assisted Development for this challenge, but it's worth it!
+
+1. Check out the rules in `.cursor/rules/` and add theme-ing information like colour schemes in `frontend-rule.mdc`! You can be as expressive as you'd like in these rules!
+2. We're going to index some docs to make our application more likely to succeed. To do this - we're going to start with `CTRL+SHIFT+P` (or `CMD+SHIFT+P` on Mac) and we're going to type "custom doc" into the search bar. 
+
+     ![image](https://i.imgur.com/ILx3hZu.png)
+3. We're then going to copy and paste `https://nextjs.org/docs` into the prompt.
+
+     ![image](https://i.imgur.com/psBjpQd.png)
+
+4. We're then going to use the default configs to add these docs to our available and indexed documents.
+
+     ![image](https://i.imgur.com/LULLeaF.png)
+
+5. After that - you will do the same with Vercel's documentation. After which you should see:
+
+     ![image](https://i.imgur.com/hjyXhhC.png) 
+
+</details>
+
+<details>
   <summary>😎 Vibe Coding a Front End</summary>
 
 1. Use `Command-L` or `CTRL-L` to open the Cursor chat console. 
@@ -55,11 +78,9 @@ That's it! Head to the next step and start building your application!
 
      ![image](https://i.imgur.com/LSgRSgF.png)
 
-3. Modify the rules (found in `.cursor/rules`) to your liking. (Give theme suggestions, and more, in `frontend-rule.mdc`)
+3. Ask Cursor to create a frontend for your application. Iterate as much as you like!
 
-4. Ask Cursor to create a frontend for your application. Iterate as much as you like!
-
-5. Run the frontend using the instructions Cursor provided. 
+4. Run the frontend using the instructions Cursor provided. 
 
 > NOTE: If you run into any errors, copy and paste them back into the Cursor chat window - and ask Cursor to fix them!
 
