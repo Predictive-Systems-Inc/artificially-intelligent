@@ -51,7 +51,7 @@ That's it! Head to the next step and start building your application!
 </details>
 
 <details>
-  <summary> Setting Up for Vibe Coding Success </summary>
+  <summary>🔥Setting Up for Vibe Coding Success </summary>
 
 While it is a bit counter-intuitive to set things up before jumping into vibe-coding - it's important to remember that there exists a gradient betweeen AI-Assisted Development and Vibe-Coding. We're only reaching *slightly* into AI-Assisted Development for this challenge, but it's worth it!
 
@@ -74,7 +74,7 @@ While it is a bit counter-intuitive to set things up before jumping into vibe-co
 </details>
 
 <details>
-  <summary>😎 Vibe Coding a Front End</summary>
+  <summary>😎 Vibe Coding a Front End for the FastAPI Backend</summary>
 
 1. Use `Command-L` or `CTRL-L` to open the Cursor chat console. 
 
@@ -87,6 +87,8 @@ While it is a bit counter-intuitive to set things up before jumping into vibe-co
 4. Run the frontend using the instructions Cursor provided. 
 
 > NOTE: If you run into any errors, copy and paste them back into the Cursor chat window - and ask Cursor to fix them!
+
+> NOTE: You have been provided with a backend in the `/api` folder - please ensure your Front End integrates with it!
 
 </details>
 
