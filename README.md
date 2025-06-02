@@ -121,6 +121,14 @@ While it is a bit counter-intuitive to set things up before jumping into vibe-co
 
 </details>
 
+### Vercel Link to Share
+
+You'll want to make sure you share you *domains* hyperlink to ensure people can access your app!
+
+![image](https://i.imgur.com/mpXIgIz.png)
+
+> NOTE: Test this is the public link by trying to open your newly deployed site in an Incognito browser tab!
+
 ### 🎉 Congratulations! 
 
 You just deployed your first LLM-powered application! 🚀🚀🚀 Get on linkedin and post your results and experience! Make sure to tag us at @AIMakerspace!
