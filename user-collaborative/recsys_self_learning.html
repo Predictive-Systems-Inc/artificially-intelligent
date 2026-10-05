@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Recommender systems: a self-learning walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f4f5; --surface:#fbfbfc; --surface-2:#eceef3; --border:#d9dae2;
+  --ink:#1e2148; --ink-2:#45465f; --muted:#6b6d84;
+  --blue:#3a6489; --sky:#3f8fc0; --light:#67a1c6; --accent:#d9673f; --accent-soft:#fbe9e2;
+  --good:#1f7a5a; --good-soft:#e2f2ea; --bad:#b4442a; --bad-soft:#fbe4dd;
+  --navy:#1e2148; --on-navy:#f4f4f5;
+  --radius-lg:18px; --radius:12px; --radius-sm:8px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14162e; --surface:#1d2040; --surface-2:#262a52; --border:#353a68;
+    --ink:#eef0fa; --ink-2:#c3c6de; --muted:#9a9dbb;
+    --blue:#7fb0d8; --sky:#79b8e0; --light:#8cc0e2; --accent:#f08a62; --accent-soft:#3a2630;
+    --good:#5fd0a2; --good-soft:#1d3a33; --bad:#ff8f72; --bad-soft:#3d2228;
+    --navy:#0d0f24; --on-navy:#eef0fa;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14162e; --surface:#1d2040; --surface-2:#262a52; --border:#353a68;
+  --ink:#eef0fa; --ink-2:#c3c6de; --muted:#9a9dbb;
+  --blue:#7fb0d8; --sky:#79b8e0; --light:#8cc0e2; --accent:#f08a62; --accent-soft:#3a2630;
+  --good:#5fd0a2; --good-soft:#1d3a33; --bad:#ff8f72; --bad-soft:#3d2228;
+  --navy:#0d0f24; --on-navy:#eef0fa;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 72px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Montserrat,"Segoe UI",Arial,sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+img,svg{max-width:100%}
+a{color:var(--sky)}
+:focus-visible{outline:3px solid var(--sky);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+/* top bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.bar-in{max-width:1180px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:20px}
+.bar-title{font-weight:700;font-size:15px;white-space:nowrap}
+.bar nav{display:flex;gap:6px;flex-wrap:wrap}
+.bar nav a{font-size:14px;font-weight:600;color:var(--ink-2);text-decoration:none;padding:6px 12px;border-radius:999px}
+.bar nav a:hover{background:var(--surface-2)}
+.progress{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);white-space:nowrap}
+.meter{width:120px;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s}
+.theme-btn{border:1px solid var(--border);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 10px;font:inherit;font-size:13px;cursor:pointer}
+
+/* hero */
+.hero{max-width:1180px;margin:0 auto;padding:56px 24px 24px;display:grid;grid-template-columns:1.05fr 1fr;gap:48px;align-items:center}
+.hero>*,.layout>*{min-width:0}
+.hero h1{font-size:clamp(32px,4.4vw,52px);line-height:1.08;margin:0 0 18px;letter-spacing:-.02em}
+.hero p{font-size:18px;color:var(--ink-2);max-width:56ch;margin:0 0 14px}
+.hero .route{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:8px 14px;font-size:14px;font-weight:600;color:var(--ink);text-decoration:none}
+.chip b{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--navy);color:var(--on-navy);font-size:12px}
+
+/* matrix */
+.matrix-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px}
+.matrix-wrap{overflow-x:auto}
+table.mx{border-collapse:separate;border-spacing:6px;margin:0 auto}
+.mx th{font-size:12.5px;font-weight:600;color:var(--muted);padding:0 2px;text-align:center;line-height:1.25}
+.mx th.u{text-align:right;font-size:15px;font-weight:700;padding-right:8px}
+.mx td{width:64px;height:48px;text-align:center;font-weight:700;font-size:20px;border-radius:10px;background:var(--surface-2);border:2px solid transparent;transition:background .25s,border-color .25s,opacity .25s}
+.mx td.q{background:transparent;border:2px dashed var(--border);color:var(--muted)}
+.mx td.target{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.mx td.hl{border-color:var(--sky);background:color-mix(in srgb,var(--sky) 16%,var(--surface))}
+.mx td.hl2{border-color:var(--accent);background:var(--accent-soft)}
+.mx td.dim{opacity:.28}
+.u-alice{color:var(--accent)} .u-bob{color:var(--blue)} .u-cara{color:var(--light)} .u-dave{color:var(--ink-2)}
+.mx-caption{font-size:13px;color:var(--muted);text-align:center;margin-top:10px}
+
+/* sections */
+section.part{max-width:1180px;margin:0 auto;padding:56px 24px 8px}
+.part-head{max-width:760px;margin-bottom:28px}
+.part-head .kicker{font-size:14px;font-weight:700;color:var(--sky)}
+.part-head h2{font-size:clamp(26px,3vw,36px);line-height:1.15;margin:4px 0 12px;letter-spacing:-.01em}
+.part-head p{color:var(--ink-2);margin:0;font-size:17px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:36px;align-items:start}
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px)}
+.side .matrix-card{padding:16px}
+.side .mx td{width:52px;height:42px;font-size:17px}
+.side-note{font-size:13.5px;color:var(--muted);margin:10px 4px 0}
+
+/* steps */
+.steps{display:flex;flex-direction:column;gap:18px;counter-reset:step}
+.step{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px 26px;scroll-margin-top:90px;transition:border-color .25s}
+.step.active{border-color:var(--sky)}
+.step.done{border-color:color-mix(in srgb,var(--good) 55%,var(--border))}
+.step-top{display:flex;gap:14px;align-items:flex-start}
+.num{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--surface-2);color:var(--ink);font-weight:700;font-size:15px;transition:background .25s,color .25s}
+.step.done .num{background:var(--good);color:#fff}
+.step h3{margin:3px 0 6px;font-size:20px;line-height:1.3}
+.step p{margin:0 0 10px;color:var(--ink-2)}
+.step .body{flex:1;min-width:0}
+.formula{font-size:15px;background:var(--surface-2);border-radius:var(--radius);padding:12px 16px;margin:10px 0 14px;overflow-x:auto;white-space:nowrap;color:var(--ink)}
+.formula em{font-style:normal;color:var(--accent);font-weight:700}
+.ask{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-end;margin-top:6px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:5px}
+.field input{width:120px;font:inherit;font-size:18px;font-weight:700;color:var(--ink);background:var(--bg);border:2px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px}
+.field input.ok{border-color:var(--good);background:var(--good-soft)}
+.field input.no{border-color:var(--bad);background:var(--bad-soft)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button.btn{font:inherit;font-size:14px;font-weight:700;border-radius:999px;padding:9px 16px;cursor:pointer;border:2px solid var(--navy);background:var(--navy);color:var(--on-navy)}
+button.btn.ghost{background:transparent;color:var(--ink);border-color:var(--border)}
+button.btn:hover{filter:brightness(1.1)}
+.fb{margin-top:12px;font-size:15px;border-radius:var(--radius);padding:10px 14px;display:none}
+.fb.show{display:block}
+.fb.ok{background:var(--good-soft);color:var(--ink)}
+.fb.no{background:var(--bad-soft);color:var(--ink)}
+.fb.info{background:var(--surface-2);color:var(--ink)}
+.fb strong{font-weight:700}
+.work{display:none;margin-top:12px;border-left:3px solid var(--sky);padding:4px 0 4px 14px;font-size:15px;color:var(--ink-2)}
+.work.show{display:block}
+.work code,.fb code{font-family:inherit;font-weight:700;color:var(--ink)}
+
+/* formula builder */
+.fx{background:var(--surface-2);border-radius:var(--radius);padding:14px 16px;margin:12px 0 4px;display:flex;flex-direction:column;gap:12px}
+.line{display:flex;flex-wrap:wrap;align-items:center;gap:6px 6px;font-size:16px;font-weight:600;color:var(--ink);line-height:1.2}
+.term{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.lab{white-space:nowrap}
+.line.total{font-size:17px;padding-top:8px;border-top:1px solid var(--border)}
+.slot{width:58px;font:inherit;font-size:17px;font-weight:700;text-align:center;color:var(--ink);background:var(--bg);border:2px dashed var(--muted);border-radius:var(--radius-sm);padding:5px 4px}
+.slot:focus{border-style:solid;border-color:var(--sky);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--sky) 30%,transparent)}
+.slot.filled{border-style:solid;border-color:var(--border)}
+.slot.ok{border:2px solid var(--good);background:var(--good-soft)}
+.slot.no{border:2px solid var(--bad);background:var(--bad-soft)}
+.res{display:inline-block;min-width:54px;padding:5px 10px;border-radius:var(--radius-sm);background:var(--navy);color:var(--on-navy);font-weight:700;text-align:center}
+.tip{font-size:14px;color:var(--muted);margin:4px 0 0!important}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 2px}
+.val{font:inherit;font-size:14px;font-weight:700;border:2px solid var(--sky);color:var(--ink);background:var(--surface);border-radius:999px;padding:5px 12px;cursor:pointer}
+.val:hover{background:color-mix(in srgb,var(--sky) 14%,var(--surface))}
+body.picking .mx td:not(.q),body.picking .ftable td.n{cursor:pointer}
+body.picking .mx td:not(.q):hover,body.picking .ftable td.n:hover{outline:2px solid var(--sky);outline-offset:1px}
+@media (max-width:560px){.slot{width:46px;font-size:16px}.line{font-size:15px}.line .lab{width:100%}}
+
+/* choices */
+.choices{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.choice{display:flex;gap:10px;align-items:flex-start;text-align:left;font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:2px solid var(--border);border-radius:var(--radius);padding:10px 14px;cursor:pointer}
+.choice:hover{border-color:var(--sky)}
+.choice .dot{flex:none;width:18px;height:18px;border-radius:50%;border:2px solid var(--muted);margin-top:3px}
+.choice.picked-ok{border-color:var(--good);background:var(--good-soft)}
+.choice.picked-ok .dot{background:var(--good);border-color:var(--good)}
+.choice.picked-no{border-color:var(--bad);background:var(--bad-soft)}
+.choice.picked-no .dot{background:var(--bad);border-color:var(--bad)}
+.choice[disabled]{cursor:default}
+
+/* sliders / playground */
+.play{background:var(--surface-2);border-radius:var(--radius);padding:16px 18px;margin-top:12px}
+.play-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:6px 0}
+.play-row label{font-size:14px;font-weight:600;min-width:130px;color:var(--ink-2)}
+input[type=range]{flex:1;min-width:160px;accent-color:var(--accent)}
+.out{font-weight:700;font-size:15px;min-width:52px;text-align:right}
+.bars{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.barrow{display:grid;grid-template-columns:120px 1fr 56px;gap:12px;align-items:center;font-size:14px;font-weight:600}
+.track{height:22px;background:var(--surface);border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.fill{height:100%;width:0;border-radius:5px;transition:width .3s}
+.neigh{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.pill{font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;border:2px solid var(--border);color:var(--muted)}
+.pill.on{color:var(--ink);border-color:var(--sky);background:var(--surface)}
+.big{font-size:30px;font-weight:700}
+
+/* feature plot */
+.plot{display:block;width:100%;height:auto;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border)}
+.legend{font-size:13px;color:var(--muted);margin-top:8px}
+.ftable{width:100%;border-collapse:collapse;font-size:14.5px;margin:6px 0 4px}
+.ftable th,.ftable td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+.ftable th{font-size:13px;color:var(--muted);font-weight:600}
+.ftable td.n{text-align:right;font-weight:700}
+.tag{font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--surface-2);color:var(--ink-2)}
+.tag.unseen{background:var(--accent-soft);color:var(--accent)}
+
+/* quiz */
+.quiz{max-width:820px}
+.qcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 26px;margin-bottom:16px}
+.qcard h3{font-size:18px;margin:0 0 4px;line-height:1.4}
+.qmeta{font-size:13px;color:var(--muted);font-weight:600}
+.score{background:var(--navy);color:var(--on-navy);border-radius:var(--radius-lg);padding:24px 28px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.score .big{font-size:44px}
+.score p{margin:0;color:color-mix(in srgb,var(--on-navy) 80%,transparent)}
+
+footer{max-width:1180px;margin:0 auto;padding:48px 24px 64px;color:var(--muted);font-size:14px}
+.reset{margin-left:8px}
+
+@media (max-width: 960px){
+  .hero{grid-template-columns:1fr;gap:28px;padding-top:36px}
+  .layout{grid-template-columns:1fr}
+  .side{position:static;order:-1}
+  .bar nav{display:none}
+}
+@media (max-width: 560px){
+  .bar-title{display:none}
+  .ftable th,.ftable td{padding:6px 6px}
+  .mx{border-spacing:4px}
+
+  .step{padding:20px 18px}
+  .mx td{width:48px;height:42px;font-size:17px}
+  .side .mx td{width:44px;height:38px;font-size:16px}
+  .barrow{grid-template-columns:90px 1fr 48px}
+  .meter{width:70px}
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-in">
+    <span class="bar-title">Recommender systems</span>
+    <nav aria-label="Sections">
+      <a href="#cf">Collaborative filtering</a>
+      <a href="#cbf">Content-based</a>
+      <a href="#quiz">Check yourself</a>
+    </nav>
+    <div class="progress" aria-live="polite"><span id="progText">0 of 0 steps</span><span class="meter"><i id="progBar"></i></span></div>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle dark mode">◐</button>
+  </div>
+</header>
+
+<main>
+<div class="hero">
+  <div>
+    <h1>Should Alice watch Top Gun or Titanic?</h1>
+    <p>Alice loved Mad Max and John Wick and disliked The Notebook. She has not seen Top Gun or Titanic. In this pack you will work out what to recommend to her twice: once from the people who rate like her, and once from the movies themselves.</p>
+    <p>No calculator needed. Each step gives you a formula with empty boxes: you choose which numbers go where, and the page does the arithmetic as you fill them in. Your progress is saved in this browser.</p>
+    <div class="route">
+      <a class="chip" href="#cf"><b>1</b> Collaborative filtering</a>
+      <a class="chip" href="#cbf"><b>2</b> Content-based filtering</a>
+      <a class="chip" href="#quiz"><b>3</b> Check your understanding</a>
+    </div>
+  </div>
+  <div class="matrix-card">
+    <div class="matrix-wrap" id="heroMatrix"></div>
+    <div class="mx-caption">Ratings from 1 to 5. The dashed cells are what we want to predict for Alice.</div>
+  </div>
+</div>
+
+<!-- PART 1 -->
+<section class="part" id="cf">
+  <div class="part-head">
+    <span class="kicker">Part 1</span>
+    <h2>Collaborative filtering: borrow the opinions of people like Alice</h2>
+    <p>No genres, no plots. Only the ratings matrix. First we measure who rates like Alice, then we let those people vote on the movies she has not seen.</p>
+  </div>
+  <div class="layout">
+    <div class="steps" id="cfSteps">
+
+      <article class="step" id="s-dot" data-hl="cf-ab">
+        <div class="step-top"><span class="num">1</span><div class="body">
+          <h3>Dot product: Alice and Bob</h3>
+          <p>Compare only the movies both rated: Mad Max, John Wick and The Notebook. Put Alice's and Bob's rating for the same movie in each pair. The page does the arithmetic.</p><p class="tip">Click a box, then click a rating in the matrix to drop it in. Or type it.</p>
+          <div class="fx"><div class="line"><span class="lab">Alice · Bob =</span> <span class="term">( <input class="slot" id="d1" inputmode="decimal" autocomplete="off" aria-label="Value d1"> × <input class="slot" id="d2" inputmode="decimal" autocomplete="off" aria-label="Value d2"> )</span> + <span class="term">( <input class="slot" id="d3" inputmode="decimal" autocomplete="off" aria-label="Value d3"> × <input class="slot" id="d4" inputmode="decimal" autocomplete="off" aria-label="Value d4"> )</span> + <span class="term">( <input class="slot" id="d5" inputmode="decimal" autocomplete="off" aria-label="Value d5"> × <input class="slot" id="d6" inputmode="decimal" autocomplete="off" aria-label="Value d6"> )</span> = <span class="res" id="r-dot">?</span></div></div>
+          <div class="btns" style="margin-top:12px"><button class="btn" data-check="s-dot">Check my formula</button><button class="btn ghost" data-show="s-dot">Show working</button></div>
+          <div class="fb" role="status"></div>
+          <div class="work">(5 × 5) + (4 × 5) + (1 × 2) = 25 + 20 + 2 = <code>47</code>. A bigger dot product means the two lists of ratings line up more.</div>
+          
+        </div></div>
+      </article>
+      <article class="step" id="s-len" data-hl="cf-ab">
+        <div class="step-top"><span class="num">2</span><div class="body">
+          <h3>Length of each rating vector</h3>
+          <p>Each person's length uses only their own ratings on the shared movies.</p><p class="tip">Click a box, then click a rating in the matrix to drop it in. Or type it.</p>
+          <div class="fx"><div class="line"><span class="lab">|Alice| =</span> <span class="term">√( <input class="slot" id="la1" inputmode="decimal" autocomplete="off" aria-label="Value la1">² + <input class="slot" id="la2" inputmode="decimal" autocomplete="off" aria-label="Value la2">² + <input class="slot" id="la3" inputmode="decimal" autocomplete="off" aria-label="Value la3">² )</span> = <span class="res" id="r-la">?</span></div><div class="line"><span class="lab">|Bob| =</span> <span class="term">√( <input class="slot" id="lb1" inputmode="decimal" autocomplete="off" aria-label="Value lb1">² + <input class="slot" id="lb2" inputmode="decimal" autocomplete="off" aria-label="Value lb2">² + <input class="slot" id="lb3" inputmode="decimal" autocomplete="off" aria-label="Value lb3">² )</span> = <span class="res" id="r-lb">?</span></div></div>
+          <div class="btns" style="margin-top:12px"><button class="btn" data-check="s-len">Check my formula</button><button class="btn ghost" data-show="s-len">Show working</button></div>
+          <div class="fb" role="status"></div>
+          <div class="work">|Alice| = √(25 + 16 + 1) = √42 ≈ <code>6.48</code>. &nbsp;|Bob| = √(25 + 25 + 4) = √54 ≈ <code>7.35</code>.</div>
+          
+        </div></div>
+      </article>
+      <article class="step" id="s-cos" data-hl="cf-ab">
+        <div class="step-top"><span class="num">3</span><div class="body">
+          <h3>Cosine similarity: divide</h3>
+          <p>Dividing by both lengths removes how generous each person is with stars and keeps only the direction of their taste. Use your results from steps 1 and 2.</p><div class="chips"><button type="button" class="val" data-v="47">Dot product 47</button><button type="button" class="val" data-v="6.48">|Alice| 6.48</button><button type="button" class="val" data-v="7.35">|Bob| 7.35</button></div>
+          <div class="fx"><div class="line"><span class="lab">cos(Alice, Bob) =</span> <input class="slot" id="c1" inputmode="decimal" autocomplete="off" aria-label="Value c1"> ÷ <span class="term">( <input class="slot" id="c2" inputmode="decimal" autocomplete="off" aria-label="Value c2"> × <input class="slot" id="c3" inputmode="decimal" autocomplete="off" aria-label="Value c3"> )</span> = <span class="res" id="r-cos">?</span></div></div>
+          <div class="btns" style="margin-top:12px"><button class="btn" data-check="s-cos">Check my formula</button><button class="btn ghost" data-show="s-cos">Show working</button></div>
+          <div class="fb" role="status"></div>
+          <div class="work">47 ÷ (6.48 × 7.35) = 47 ÷ 47.63 ≈ <code>0.99</code>. Close to 1 means Alice and Bob point in almost the same direction.</div>
+          
+        </div></div>
+      </article>
+      <article class="step" id="s-cara" data-hl="cf-ac">
+        <div class="step-top"><span class="num">4</span><div class="body">
+          <h3>Your turn: Alice and Cara</h3>
+          <p>Same recipe, one formula. Cara rated the same three movies.</p><p class="tip">Click a box, then click a rating in the matrix to drop it in. Or type it.</p>
+          <div class="fx"><div class="line"><span class="lab">Dot product =</span> <span class="term">( <input class="slot" id="e1" inputmode="decimal" autocomplete="off" aria-label="Value e1"> × <input class="slot" id="e2" inputmode="decimal" autocomplete="off" aria-label="Value e2"> )</span> + <span class="term">( <input class="slot" id="e3" inputmode="decimal" autocomplete="off" aria-label="Value e3"> × <input class="slot" id="e4" inputmode="decimal" autocomplete="off" aria-label="Value e4"> )</span> + <span class="term">( <input class="slot" id="e5" inputmode="decimal" autocomplete="off" aria-label="Value e5"> × <input class="slot" id="e6" inputmode="decimal" autocomplete="off" aria-label="Value e6"> )</span> = <span class="res" id="r-cdot">?</span></div><div class="line"><span class="lab">Lengths =</span> <span class="term">√( <input class="slot" id="f1" inputmode="decimal" autocomplete="off" aria-label="Value f1">² + <input class="slot" id="f2" inputmode="decimal" autocomplete="off" aria-label="Value f2">² + <input class="slot" id="f3" inputmode="decimal" autocomplete="off" aria-label="Value f3">² )</span> × <span class="term">√( <input class="slot" id="f4" inputmode="decimal" autocomplete="off" aria-label="Value f4">² + <input class="slot" id="f5" inputmode="decimal" autocomplete="off" aria-label="Value f5">² + <input class="slot" id="f6" inputmode="decimal" autocomplete="off" aria-label="Value f6">² )</span> = <span class="res" id="r-clen">?</span></div><div class="line total"><span class="lab">cos(Alice, Cara) =</span> <span class="res" id="r-ccos">?</span></div></div>
+          <div class="btns" style="margin-top:12px"><button class="btn" data-check="s-cara">Check my formula</button><button class="btn ghost" data-show="s-cara">Show working</button></div>
+          <div class="fb" role="status"></div>
+          <div class="work">Dot product: (5 × 1) + (4 × 2) + (1 × 5) = 18. Lengths: √42 × √30 ≈ 6.48 × 5.48 = 35.50. Cosine: 18 ÷ 35.50 ≈ <code>0.51</code>. Cara is much less like Alice than Bob is.</div>
+          
+        </div></div>
+      </article>
+      <article class="step" id="s-dave" data-hl="cf-ad">
+        <div class="step-top"><span class="num">5</span><div class="body">
+          <h3>Dave, and a trap</h3>
+          <p>Dave never rated John Wick, so Alice and Dave share only Mad Max and The Notebook.</p><p class="tip">Click a box, then click a rating in the matrix to drop it in. Or type it.</p>
+          <div class="fx"><div class="line"><span class="lab">Dot product =</span> <span class="term">( <input class="slot" id="g1" inputmode="decimal" autocomplete="off" aria-label="Value g1"> × <input class="slot" id="g2" inputmode="decimal" autocomplete="off" aria-label="Value g2"> )</span> + <span class="term">( <input class="slot" id="g3" inputmode="decimal" autocomplete="off" aria-label="Value g3"> × <input class="slot" id="g4" inputmode="decimal" autocomplete="off" aria-label="Value g4"> )</span> = <span class="res" id="r-ddot">?</span></div><div class="line"><span class="lab">Lengths =</span> <span class="term">√( <input class="slot" id="h1" inputmode="decimal" autocomplete="off" aria-label="Value h1">² + <input class="slot" id="h2" inputmode="decimal" autocomplete="off" aria-label="Value h2">² )</span> × <span class="term">√( <input class="slot" id="h3" inputmode="decimal" autocomplete="off" aria-label="Value h3">² + <input class="slot" id="h4" inputmode="decimal" autocomplete="off" aria-label="Value h4">² )</span> = <span class="res" id="r-dlen">?</span></div><div class="line total"><span class="lab">cos(Alice, Dave) =</span> <span class="res" id="r-dcos">?</span></div></div>
+          <div class="btns" style="margin-top:12px"><button class="btn" data-check="s-dave">Check my formula</button><button class="btn ghost" data-show="s-dave">Show working</button></div>
+          <div class="fb" role="status"></div>
+          <div class="work">(5 × 4) + (1 × 1) = 21. √26 × √17 ≈ 5.10 × 4.12 = 21.02. Cosine: 21 ÷ 21.02 ≈ <code>1.00</code>. Dave looks like Alice's twin.</div>
+          <p style="margin-top:16px"><strong>Should we trust that 1.00?</strong></p>
+          <div class="choices" data-mc="s-dave-mc" data-answer="b">
+            <button class="choice" data-v="a"><span class="dot"></span><span>Yes. A cosine of 1.00 means identical taste, so Dave is the best neighbour.</span></button>
+            <button class="choice" data-v="b"><span class="dot"></span><span>Not fully. It rests on only two shared movies, so it could easily be luck.</span></button>
+            <button class="choice" data-v="c"><span class="dot"></span><span>No. Dave's ratings are lower than Alice's, so the cosine must be wrong.</span></button>
+          </div>
+          <div class="fb mcfb" role="status"></div>
+        </div></div>
+      </article>
+      <article class="step" id="s-pred" data-hl="cf-pred">
+        <div class="step-top"><span class="num">6</span><div class="body">
+          <h3>Let the neighbours vote</h3>
+          <p>Alice's two closest neighbours who rated the target movies are Dave (similarity 1.00) and Bob (0.99). Each vote is a rating multiplied by that person's similarity. Pair each similarity with the same person's rating.</p><div class="chips"><button type="button" class="val" data-v="1.00">Dave's similarity 1.00</button><button type="button" class="val" data-v="0.99">Bob's similarity 0.99</button></div><p class="tip">Ratings come from the matrix: click a box, then a cell.</p>
+          <div class="fx"><div class="line"><span class="lab">Top Gun =</span> ( <span class="term"><input class="slot" id="p1" inputmode="decimal" autocomplete="off" aria-label="Value p1"> × <input class="slot" id="p2" inputmode="decimal" autocomplete="off" aria-label="Value p2"></span> + <span class="term"><input class="slot" id="p3" inputmode="decimal" autocomplete="off" aria-label="Value p3"> × <input class="slot" id="p4" inputmode="decimal" autocomplete="off" aria-label="Value p4"></span> ) ÷ <span class="term">( <input class="slot" id="p5" inputmode="decimal" autocomplete="off" aria-label="Value p5"> + <input class="slot" id="p6" inputmode="decimal" autocomplete="off" aria-label="Value p6"> )</span> = <span class="res" id="r-tg">?</span></div><div class="line"><span class="lab">Titanic =</span> ( <span class="term"><input class="slot" id="q1" inputmode="decimal" autocomplete="off" aria-label="Value q1"> × <input class="slot" id="q2" inputmode="decimal" autocomplete="off" aria-label="Value q2"></span> + <span class="term"><input class="slot" id="q3" inputmode="decimal" autocomplete="off" aria-label="Value q3"> × <input class="slot" id="q4" inputmode="decimal" autocomplete="off" aria-label="Value q4"></span> ) ÷ <span class="term">( <input class="slot" id="q5" inputmode="decimal" autocomplete="off" aria-label="Value q5"> + <input class="slot" id="q6" inputmode="decimal" autocomplete="off" aria-label="Value q6"> )</span> = <span class="res" id="r-ti">?</span></div></div>
+          <div class="btns" style="margin-top:12px"><button class="btn" data-check="s-pred">Check my formula</button><button class="btn ghost" data-show="s-pred">Show working</button></div>
+          <div class="fb" role="status"></div>
+          <div class="work">Top Gun: (0.99 × 4 + 1.00 × 5) ÷ (0.99 + 1.00) = 8.96 ÷ 1.99 ≈ <code>4.5</code>. Titanic: (0.99 × 1 + 1.00 × 2) ÷ 1.99 ≈ <code>1.5</code>. Recommend Top Gun.</div>
+          
+        </div></div>
+      </article>
+      <article class="step" id="s-k" data-hl="cf-pred">
+        <div class="step-top"><span class="num">7</span><div class="body">
+          <h3>Explore: how many neighbours?</h3>
+          <p>The number of neighbours, <em>k</em>, is a choice you make. Slide it and watch the predictions change.</p>
+          <div class="play">
+            <div class="play-row"><label for="kSlider">Neighbours (k)</label><input type="range" id="kSlider" min="1" max="3" step="1" value="2"><span class="out" id="kOut">2</span></div>
+            <div class="neigh" id="kPills"></div>
+            <div class="bars" id="kBars"></div>
+          </div>
+          <p style="margin-top:16px"><strong>What happens at k = 3, when Cara joins the vote?</strong></p>
+          <div class="choices" data-mc="s-k-mc" data-answer="c">
+            <button class="choice" data-v="a"><span class="dot"></span><span>Nothing changes, because Cara is too different to count.</span></button>
+            <button class="choice" data-v="b"><span class="dot"></span><span>Top Gun's prediction rises, because there are more votes.</span></button>
+            <button class="choice" data-v="c"><span class="dot"></span><span>Top Gun drops and Titanic rises: a less similar person dilutes the signal.</span></button>
+          </div>
+          <div class="fb mcfb" role="status"></div>
+        </div></div>
+      </article>
+    </div>
+
+    <aside class="side" aria-label="Ratings matrix">
+      <div class="matrix-card"><div class="matrix-wrap" id="cfMatrix"></div></div>
+      <p class="side-note" id="cfNote">The highlighted cells are the ones the current step uses.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- PART 2 -->
+<section class="part" id="cbf">
+  <div class="part-head">
+    <span class="kicker">Part 2</span>
+    <h2>Content-based filtering: more of what Alice already likes</h2>
+    <p>Now ignore Bob, Cara and Dave completely. Describe each movie by its features, build a profile of Alice's taste, and compare.</p>
+  </div>
+  <div class="layout">
+    <div class="steps" id="cbfSteps">
+
+      <article class="step" id="s-feat">
+        <div class="step-top"><span class="num">1</span><div class="body">
+          <h3>Describe every movie</h3>
+          <p>We give each movie two scores from 0 to 1: how much action and how much romance. These numbers are made up for teaching; real systems use genres, cast, keywords or embeddings.</p>
+          <div style="overflow-x:auto"><table class="ftable" aria-label="Movie features">
+            <thead><tr><th>Movie</th><th>Action</th><th>Romance</th><th>Alice</th></tr></thead>
+            <tbody id="featBody"></tbody>
+          </table></div>
+          <p style="margin-top:14px"><strong>Which movie sits between the two clusters?</strong></p>
+          <div class="choices" data-mc="s-feat-mc" data-answer="c">
+            <button class="choice" data-v="a"><span class="dot"></span><span>John Wick</span></button>
+            <button class="choice" data-v="b"><span class="dot"></span><span>Titanic</span></button>
+            <button class="choice" data-v="c"><span class="dot"></span><span>Top Gun: mostly action, with a romantic subplot</span></button>
+          </div>
+          <div class="fb mcfb" role="status"></div>
+        </div></div>
+      </article>
+
+      <article class="step" id="s-prof">
+        <div class="step-top"><span class="num">2</span><div class="body">
+          <h3>Build Alice's taste profile</h3>
+          <p>Weight each movie's features by Alice's rating, then divide by the total of her ratings (5 + 4 + 1 = 10). The ratings are already filled in; add each movie's feature value.</p><p class="tip">Click a box, then click a number in the feature table above. Or type it.</p>
+          <div class="fx"><div class="line"><span class="lab">Action =</span> ( <span class="term">5 × <input class="slot" id="m1" inputmode="decimal" autocomplete="off" aria-label="Value m1"></span> + <span class="term">4 × <input class="slot" id="m2" inputmode="decimal" autocomplete="off" aria-label="Value m2"></span> + <span class="term">1 × <input class="slot" id="m3" inputmode="decimal" autocomplete="off" aria-label="Value m3"></span> ) ÷ 10 = <span class="res" id="r-pa">?</span></div><div class="line"><span class="lab">Romance =</span> ( <span class="term">5 × <input class="slot" id="n1" inputmode="decimal" autocomplete="off" aria-label="Value n1"></span> + <span class="term">4 × <input class="slot" id="n2" inputmode="decimal" autocomplete="off" aria-label="Value n2"></span> + <span class="term">1 × <input class="slot" id="n3" inputmode="decimal" autocomplete="off" aria-label="Value n3"></span> ) ÷ 10 = <span class="res" id="r-pr">?</span></div><p class="tip">In order: Mad Max, John Wick, The Notebook.</p></div>
+          <div class="btns" style="margin-top:12px"><button class="btn" data-check="s-prof">Check my formula</button><button class="btn ghost" data-show="s-prof">Show working</button></div>
+          <div class="fb" role="status"></div>
+          <div class="work">Action: (5 × 1.0 + 4 × 0.9 + 1 × 0.0) ÷ 10 = 8.6 ÷ 10 = <code>0.86</code>. Romance: (5 × 0.1 + 4 × 0.2 + 1 × 1.0) ÷ 10 = 2.3 ÷ 10 = <code>0.23</code>. Mad Max counts five times and The Notebook once, so the profile leans hard toward action.</div>
+          
+        </div></div>
+      </article>
+      <article class="step" id="s-score">
+        <div class="step-top"><span class="num">3</span><div class="body">
+          <h3>Score the unseen movies</h3>
+          <p>Cosine between Alice's profile [0.86, 0.23] and each unseen movie. The lengths are filled in for you; add the movie's action and romance values.</p><p class="tip">Click a box, then click a number in the feature table above. Or type it.</p>
+          <div class="fx"><div class="line"><span class="lab">Top Gun =</span> ( <span class="term">0.86 × <input class="slot" id="t1" inputmode="decimal" autocomplete="off" aria-label="Value t1"></span> + <span class="term">0.23 × <input class="slot" id="t2" inputmode="decimal" autocomplete="off" aria-label="Value t2"></span> ) ÷ ( 0.89 × 0.89 ) = <span class="res" id="r-stg">?</span></div><div class="line"><span class="lab">Titanic =</span> ( <span class="term">0.86 × <input class="slot" id="u1" inputmode="decimal" autocomplete="off" aria-label="Value u1"></span> + <span class="term">0.23 × <input class="slot" id="u2" inputmode="decimal" autocomplete="off" aria-label="Value u2"></span> ) ÷ ( 0.89 × 0.95 ) = <span class="res" id="r-sti">?</span></div></div>
+          <div class="btns" style="margin-top:12px"><button class="btn" data-check="s-score">Check my formula</button><button class="btn ghost" data-show="s-score">Show working</button></div>
+          <div class="fb" role="status"></div>
+          <div class="work">Top Gun: (0.86 × 0.8 + 0.23 × 0.4) ÷ (0.89 × 0.89) = 0.78 ÷ 0.80 ≈ <code>0.98</code>. Titanic: (0.86 × 0.3 + 0.23 × 0.9) ÷ (0.89 × 0.95) = 0.47 ÷ 0.84 ≈ <code>0.55</code>. Same answer as collaborative filtering: recommend Top Gun, without looking at any other user.</div>
+          
+        </div></div>
+      </article>
+      <article class="step" id="s-new">
+        <div class="step-top"><span class="num">4</span><div class="body">
+          <h3>Explore: a brand-new movie arrives</h3>
+          <p>A new film launches with zero ratings, so collaborative filtering cannot score it. Content-based filtering only needs its features. Set them and see where it lands for Alice.</p>
+          <div class="play">
+            <div class="play-row"><label for="nA">New movie: action</label><input type="range" id="nA" min="0" max="1" step="0.05" value="0.85"><span class="out" id="nAo">0.85</span></div>
+            <div class="play-row"><label for="nR">New movie: romance</label><input type="range" id="nR" min="0" max="1" step="0.05" value="0.30"><span class="out" id="nRo">0.30</span></div>
+            <div class="bars" id="newBars"></div>
+          </div>
+          <p style="margin-top:16px"><strong>Try a pure romance (action 0, romance 1). Why does it fall to the bottom?</strong></p>
+          <div class="choices" data-mc="s-new-mc" data-answer="a">
+            <button class="choice" data-v="a"><span class="dot"></span><span>Its direction is far from Alice's profile, which points toward action.</span></button>
+            <button class="choice" data-v="b"><span class="dot"></span><span>New movies always score low until they get ratings.</span></button>
+            <button class="choice" data-v="c"><span class="dot"></span><span>Romance films have shorter feature vectors.</span></button>
+          </div>
+          <div class="fb mcfb" role="status"></div>
+        </div></div>
+      </article>
+
+      <article class="step" id="s-weights">
+        <div class="step-top"><span class="num">5</span><div class="body">
+          <h3>Explore: change Alice's ratings</h3>
+          <p>Her profile is built from her ratings, so changing them moves the arrow. Watch the plot and the scores.</p>
+          <div class="play">
+            <div class="play-row"><label for="rMM">Mad Max</label><input type="range" id="rMM" min="1" max="5" step="1" value="5"><span class="out" id="rMMo">5</span></div>
+            <div class="play-row"><label for="rJW">John Wick</label><input type="range" id="rJW" min="1" max="5" step="1" value="4"><span class="out" id="rJWo">4</span></div>
+            <div class="play-row"><label for="rNB">The Notebook</label><input type="range" id="rNB" min="1" max="5" step="1" value="1"><span class="out" id="rNBo">1</span></div>
+            <div class="play-row"><label>Profile</label><span class="out" id="profOut" style="text-align:left">[0.86, 0.23]</span></div>
+          </div>
+          <p style="margin-top:16px"><strong>Alice rated The Notebook 1 star. With this simple weighting, what does that rating do to her profile?</strong></p>
+          <div class="choices" data-mc="s-w-mc" data-answer="b">
+            <button class="choice" data-v="a"><span class="dot"></span><span>It pushes the profile away from romance.</span></button>
+            <button class="choice" data-v="b"><span class="dot"></span><span>It still nudges the profile slightly toward romance, because every weight is positive.</span></button>
+            <button class="choice" data-v="c"><span class="dot"></span><span>It has no effect at all.</span></button>
+          </div>
+          <div class="fb mcfb" role="status"></div>
+        </div></div>
+      </article>
+    </div>
+
+    <aside class="side" aria-label="Feature space plot">
+      <div class="matrix-card">
+        <svg class="plot" id="plot" viewBox="0 0 400 340" role="img" aria-label="Movies plotted by action and romance with Alice's profile arrow"></svg>
+        <div class="legend">Filled dots: movies Alice rated. Hollow dots: movies she has not seen. The arrow is her profile.</div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- PART 3 -->
+<section class="part" id="quiz">
+  <div class="part-head">
+    <span class="kicker">Part 3</span>
+    <h2>Check your understanding</h2>
+    <p>Eight questions on the ideas behind the arithmetic. Each answer comes with an explanation, so a wrong pick is still useful.</p>
+  </div>
+  <div class="quiz" id="quizList"></div>
+  <div class="quiz">
+    <div class="score" id="scoreBox">
+      <span class="big" id="scoreNum">0 / 8</span>
+      <p id="scoreMsg">Answer the questions above to see how you did.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  Self-learning pack for Week 13, Recommender Systems. Movie titles are real; every rating and feature value is invented for the example.
+  <button class="btn ghost reset" id="resetBtn" type="button">Start over</button>
+</footer>
+
+<script>
+(function(){
+const KEY="recsys-pack-v1";
+let state={};
+try{state=JSON.parse(localStorage.getItem(KEY)||"{}")||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+
+/* theme */
+const themeBtn=document.getElementById("themeBtn");
+if(state.theme) document.documentElement.setAttribute("data-theme",state.theme);
+themeBtn.addEventListener("click",()=>{
+  const cur=document.documentElement.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+  const next=cur==="dark"?"light":"dark";
+  document.documentElement.setAttribute("data-theme",next); state.theme=next; save(); drawPlot();
+});
+
+/* data */
+const movies=["Mad Max","John Wick","The Notebook","Titanic","Top Gun"];
+const users=[["Alice","u-alice"],["Bob","u-bob"],["Cara","u-cara"],["Dave","u-dave"]];
+const R={Alice:[5,4,1,null,null],Bob:[5,5,2,1,4],Cara:[1,2,5,5,1],Dave:[4,null,1,2,5]};
+
+function matrixHTML(id){
+  let h='<table class="mx" id="'+id+'"><thead><tr><th></th>'+movies.map(m=>'<th scope="col">'+m.replace(" ","<br>")+'</th>').join("")+'</tr></thead><tbody>';
+  users.forEach(([u,c])=>{
+    h+='<tr><th scope="row" class="u '+c+'">'+u+'</th>';
+    R[u].forEach((v,j)=>{
+      const q=v===null, tgt=q&&u==="Alice";
+      h+='<td data-u="'+u+'" data-m="'+j+'" class="'+(q?"q":"")+(tgt?" target":"")+'" aria-label="'+u+', '+movies[j]+': '+(q?"not rated":v)+'">'+(q?"?":v)+'</td>';
+    });
+    h+='</tr>';
+  });
+  return h+'</tbody></table>';
+}
+document.getElementById("heroMatrix").innerHTML=matrixHTML("mxHero");
+document.getElementById("cfMatrix").innerHTML=matrixHTML("mxCF");
+
+const HL={
+  "cf-ab":{users:["Alice","Bob"],cols:[0,1,2],note:"Alice and Bob, on the three movies both rated."},
+  "cf-ac":{users:["Alice","Cara"],cols:[0,1,2],note:"Alice and Cara, on the same three movies."},
+  "cf-ad":{users:["Alice","Dave"],cols:[0,2],note:"Alice and Dave share only two movies."},
+  "cf-pred":{users:["Bob","Dave"],cols:[3,4],note:"Bob's and Dave's votes on Titanic and Top Gun."}
+};
+function highlight(key){
+  const t=document.getElementById("mxCF"); const spec=HL[key];
+  t.querySelectorAll("td").forEach(td=>{
+    td.classList.remove("hl","hl2","dim");
+    if(!spec) return;
+    const u=td.dataset.u, m=+td.dataset.m;
+    const inUser=spec.users.includes(u), inCol=spec.cols.includes(m);
+    if(inUser&&inCol&&!td.classList.contains("q")) td.classList.add(u==="Alice"?"hl2":"hl");
+    else if(!(u==="Alice"&&td.classList.contains("target")&&key==="cf-pred")) td.classList.add("dim");
+  });
+  document.getElementById("cfNote").textContent=spec?spec.note:"The highlighted cells are the ones the current step uses.";
+}
+
+/* formula builder */
+const v=id=>{const el=document.getElementById(id); if(!el) return NaN; const t=el.value.trim().replace(",","."); return t===""?NaN:Number(t);};
+const sq=x=>x*x;
+const FX={
+  "s-dot":{sets:[{terms:[["d1","d2"],["d3","d4"],["d5","d6"]],expect:[[5,5],[4,5],[1,2]],tol:0.001}],
+    out:[["r-dot",()=>v("d1")*v("d2")+v("d3")*v("d4")+v("d5")*v("d6"),0]],
+    hint:"Each pair is one movie: Alice's rating times Bob's rating for that same movie, using Mad Max, John Wick and The Notebook."},
+  "s-len":{sets:[{terms:[["la1"],["la2"],["la3"]],expect:[[5],[4],[1]],tol:0.001},{terms:[["lb1"],["lb2"],["lb3"]],expect:[[5],[5],[2]],tol:0.001}],
+    out:[["r-la",()=>Math.sqrt(sq(v("la1"))+sq(v("la2"))+sq(v("la3"))),2],["r-lb",()=>Math.sqrt(sq(v("lb1"))+sq(v("lb2"))+sq(v("lb3"))),2]],
+    hint:"Alice's length uses only Alice's three ratings; Bob's uses only Bob's."},
+  "s-cos":{sets:[{terms:[["c1"]],expect:[[47]],tol:0.01},{terms:[["c2"],["c3"]],expect:[[6.48],[7.35]],tol:0.03}],
+    out:[["r-cos",()=>v("c1")/(v("c2")*v("c3")),2]],
+    hint:"The dot product goes on top. The two lengths are multiplied underneath."},
+  "s-cara":{sets:[{terms:[["e1","e2"],["e3","e4"],["e5","e6"]],expect:[[5,1],[4,2],[1,5]],tol:0.001},{terms:[["f1","f2","f3"],["f4","f5","f6"]],expect:[[5,4,1],[1,2,5]],tol:0.001}],
+    out:[["r-cdot",()=>v("e1")*v("e2")+v("e3")*v("e4")+v("e5")*v("e6"),0],["r-clen",()=>Math.sqrt(sq(v("f1"))+sq(v("f2"))+sq(v("f3")))*Math.sqrt(sq(v("f4"))+sq(v("f5"))+sq(v("f6"))),2],
+         ["r-ccos",()=>(v("e1")*v("e2")+v("e3")*v("e4")+v("e5")*v("e6"))/(Math.sqrt(sq(v("f1"))+sq(v("f2"))+sq(v("f3")))*Math.sqrt(sq(v("f4"))+sq(v("f5"))+sq(v("f6")))),2]],
+    hint:"Pairs are Alice's and Cara's ratings for the same movie. Each square root holds one person's three ratings."},
+  "s-dave":{sets:[{terms:[["g1","g2"],["g3","g4"]],expect:[[5,4],[1,1]],tol:0.001},{terms:[["h1","h2"],["h3","h4"]],expect:[[5,1],[4,1]],tol:0.001}],
+    out:[["r-ddot",()=>v("g1")*v("g2")+v("g3")*v("g4"),0],["r-dlen",()=>Math.sqrt(sq(v("h1"))+sq(v("h2")))*Math.sqrt(sq(v("h3"))+sq(v("h4"))),2],
+         ["r-dcos",()=>(v("g1")*v("g2")+v("g3")*v("g4"))/(Math.sqrt(sq(v("h1"))+sq(v("h2")))*Math.sqrt(sq(v("h3"))+sq(v("h4")))),2]],
+    hint:"Use only Mad Max and The Notebook, the two movies Alice and Dave both rated."},
+  "s-pred":{sets:[{terms:[["p1","p2"],["p3","p4"]],expect:[[0.99,4],[1,5]],tol:0.011},{terms:[["p5"],["p6"]],expect:[[0.99],[1]],tol:0.011},
+                  {terms:[["q1","q2"],["q3","q4"]],expect:[[0.99,1],[1,2]],tol:0.011},{terms:[["q5"],["q6"]],expect:[[0.99],[1]],tol:0.011}],
+    out:[["r-tg",()=>(v("p1")*v("p2")+v("p3")*v("p4"))/(v("p5")+v("p6")),1],["r-ti",()=>(v("q1")*v("q2")+v("q3")*v("q4"))/(v("q5")+v("q6")),1]],
+    hint:"Each product is one person: their similarity times their rating. Bob is 0.99 with Bob's rating; Dave is 1.00 with Dave's. The two similarities go underneath."},
+  "s-prof":{sets:[{terms:[["m1"],["m2"],["m3"]],expect:[[1.0],[0.9],[0.0]],tol:0.001,ordered:true},{terms:[["n1"],["n2"],["n3"]],expect:[[0.1],[0.2],[1.0]],tol:0.001,ordered:true}],
+    out:[["r-pa",()=>(5*v("m1")+4*v("m2")+1*v("m3"))/10,2],["r-pr",()=>(5*v("n1")+4*v("n2")+1*v("n3"))/10,2]],
+    hint:"The boxes go in order Mad Max, John Wick, The Notebook. Action uses the action column; romance uses the romance column."},
+  "s-score":{sets:[{terms:[["t1"],["t2"]],expect:[[0.8],[0.4]],tol:0.001,ordered:true},{terms:[["u1"],["u2"]],expect:[[0.3],[0.9]],tol:0.001,ordered:true}],
+    out:[["r-stg",()=>(0.86*v("t1")+0.23*v("t2"))/(0.89*0.89),2],["r-sti",()=>(0.86*v("u1")+0.23*v("u2"))/(0.89*0.95),2]],
+    hint:"Action value next to 0.86, romance value next to 0.23. Top Gun is [0.8, 0.4], Titanic is [0.3, 0.9]."}
+};
+const slotsOf=id=>FX[id].sets.flatMap(s=>s.terms.flat());
+function liveUpdate(id){
+  FX[id].out.forEach(([rid,fn,dp])=>{const x=fn(); document.getElementById(rid).textContent=isFinite(x)?x.toFixed(dp):"?";});
+  slotsOf(id).forEach(sid=>{const el=document.getElementById(sid); el.classList.toggle("filled",el.value.trim()!==""); el.classList.remove("ok","no");});
+}
+const close=(a,b,t)=>Math.abs(a-b)<=t;
+function matchMulti(vals,exp,tol){ const left=[...exp]; for(const x of vals){ const i=left.findIndex(e=>close(e,x,tol)); if(i<0) return false; left.splice(i,1);} return true; }
+function validate(id){
+  let all=true, empty=false;
+  FX[id].sets.forEach(set=>{
+    const used=new Array(set.expect.length).fill(false);
+    set.terms.forEach((term,ti)=>{
+      const vals=term.map(v);
+      if(vals.some(isNaN)){ empty=true; all=false; return; }
+      let ok=false;
+      if(set.ordered){ ok=matchMulti(vals,set.expect[ti],set.tol); }
+      else { for(let k=0;k<set.expect.length;k++){ if(!used[k]&&set.expect[k].length===vals.length&&matchMulti(vals,set.expect[k],set.tol)){used[k]=true;ok=true;break;} } }
+      term.forEach(sid=>document.getElementById(sid).classList.add(ok?"ok":"no"));
+      if(!ok) all=false;
+    });
+  });
+  return {all,empty};
+}
+function check(id,silent){
+  liveUpdate(id);
+  const {all,empty}=validate(id);
+  state["vals:"+id]=slotsOf(id).map(sid=>document.getElementById(sid).value);
+  if(silent){ if(all) state["num:"+id]=true; return; }
+  const fb=document.getElementById(id).querySelector(".fb:not(.mcfb)");
+  if(all){ fb.className="fb show ok"; fb.innerHTML="<strong>Correct.</strong> "+(id==="s-pred"?"Top Gun wins for Alice.":"Every value is in the right place."); state["num:"+id]=true; }
+  else if(empty){ fb.className="fb show info"; slotsOf(id).forEach(sid=>{const el=document.getElementById(sid); if(el.value.trim()==="") el.classList.remove("no");}); fb.innerHTML="Fill every box, then check again."; }
+  else { fb.className="fb show no"; fb.innerHTML="<strong>Some boxes are off</strong> (marked in red). "+FX[id].hint; }
+  save(); refreshProgress();
+}
+let lastSlot=null;
+document.querySelectorAll(".slot").forEach(el=>{
+  el.addEventListener("focus",()=>{lastSlot=el; document.body.classList.add("picking");});
+  el.addEventListener("input",()=>{const st=el.closest(".step").id; liveUpdate(st); state["vals:"+st]=slotsOf(st).map(s=>document.getElementById(s).value); save();});
+  el.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); check(el.closest(".step").id); } });
+});
+function fillSlot(val){
+  if(!lastSlot) return;
+  lastSlot.value=val; lastSlot.dispatchEvent(new Event("input"));
+  const st=lastSlot.closest(".step"); const all=[...st.querySelectorAll(".slot")]; const i=all.indexOf(lastSlot);
+  const next=all.slice(i+1).find(x=>x.value.trim()==="")||all[i+1];
+  if(next){ next.focus(); } else { lastSlot.blur(); }
+}
+document.addEventListener("pointerdown",e=>{ if(e.target.closest(".mx td, .ftable td.n, .val")) e.preventDefault(); });
+document.querySelectorAll("#mxCF td").forEach(td=>td.addEventListener("click",()=>{ if(!td.classList.contains("q")) fillSlot(td.textContent.trim()); }));
+document.addEventListener("click",e=>{
+  const c=e.target.closest(".val"); if(c){ fillSlot(c.dataset.v); return; }
+  const f=e.target.closest(".ftable td.n"); if(f){ fillSlot(f.textContent.trim()); return; }
+  if(!e.target.closest(".slot, .mx td")){ document.body.classList.remove("picking"); }
+});
+document.querySelectorAll("[data-check]").forEach(b=>b.addEventListener("click",()=>check(b.dataset.check)));
+document.querySelectorAll("[data-show]").forEach(b=>b.addEventListener("click",()=>{
+  const w=document.getElementById(b.dataset.show).querySelector(".work"); const open=w.classList.toggle("show");
+  b.textContent=open?"Hide working":"Show working";
+}));
+const ANS=FX;
+
+/* step completion */
+const allSteps=[...document.querySelectorAll(".step")];
+function stepDone(id){
+  const st=document.getElementById(id);
+  const needNums=!!FX[id], mc=st.querySelector("[data-mc]");
+  const numsOk=!needNums||state["num:"+id]===true;
+  const mcOk=!mc||state["mc:"+mc.dataset.mc]!==undefined;
+  return numsOk&&mcOk;
+}
+function refreshProgress(){
+  let n=0; allSteps.forEach(s=>{const d=stepDone(s.id); s.classList.toggle("done",d); if(d) n++;});
+  const q=QUIZ.length, qa=QUIZ.filter((_,i)=>state["quiz:"+i]!==undefined).length;
+  const total=allSteps.length+q, done=n+qa;
+  document.getElementById("progText").textContent=done+" of "+total+" done";
+  document.getElementById("progBar").style.width=(100*done/total)+"%";
+}
+
+/* multiple choice inside steps */
+const MCFB={
+  "s-dave-mc":{a:"Cosine says the direction matches, but it says nothing about how much evidence there is.",b:"Right. Two movies is very little evidence. Real systems require a minimum overlap or shrink similarities from small overlaps toward zero.",c:"Lower ratings do not break cosine. Dividing by the lengths cancels out how generous someone is."},
+  "s-k-mc":{a:"Cara does count: her votes are weighted by 0.51, which is far from zero.",b:"More votes is not always better. Cara rated Top Gun 1, which pulls the average down.",c:"Right. With k = 3, Top Gun falls to about 3.8 and Titanic rises to about 2.2. Too large a k lets less similar people dilute the signal; too small a k makes predictions noisy."},
+  "s-feat-mc":{a:"John Wick sits with Mad Max in the action corner.",b:"Titanic sits with The Notebook in the romance corner.",c:"Right. Top Gun scores 0.8 for action and 0.4 for romance, so it sits between the clusters, nearer the action side."},
+  "s-new-mc":{a:"Right. Cosine compares directions, and a pure romance points almost at right angles to Alice's action-heavy profile.",b:"Content-based filtering does not need ratings at all. A new action film can top the list on day one.",c:"Length does not matter for cosine; only direction does."},
+  "s-w-mc":{a:"That would need a negative weight. A common fix is to weight by rating minus the user's average, so disliked movies push the profile away.",b:"Right. Every weight here is positive, so even a 1-star movie pulls the profile a little toward its features. Weighting by rating minus Alice's average fixes this.",c:"Try moving The Notebook's slider: the profile's romance value changes."}
+};
+function wireMC(container,key,answer,fbEl,explain,onPick){
+  const btns=[...container.querySelectorAll(".choice")];
+  function render(v){
+    btns.forEach(b=>{b.classList.remove("picked-ok","picked-no"); b.setAttribute("aria-pressed",b.dataset.v===v?"true":"false");
+      if(b.dataset.v===v) b.classList.add(v===answer?"picked-ok":"picked-no");
+      if(v!==answer&&b.dataset.v===answer&&v!==undefined){} });
+    if(v===undefined){fbEl.className=fbEl.className.replace(" show","");return;}
+    fbEl.className="fb show "+(v===answer?"ok":"no")+(fbEl.classList.contains("mcfb")?" mcfb":"");
+    fbEl.innerHTML=(v===answer?"<strong>Correct.</strong> ":"<strong>Not quite.</strong> ")+explain[v];
+  }
+  btns.forEach(b=>b.addEventListener("click",()=>{ state[key]=b.dataset.v; save(); render(b.dataset.v); refreshProgress(); if(onPick) onPick(); }));
+  render(state[key]);
+}
+document.querySelectorAll(".step [data-mc]").forEach(c=>{
+  const key="mc:"+c.dataset.mc; wireMC(c,key,c.dataset.answer,c.parentElement.querySelector(".mcfb"),MCFB[c.dataset.mc]);
+});
+
+/* k slider */
+const sims={Dave:21/(Math.sqrt(26)*Math.sqrt(17)),Bob:47/(Math.sqrt(42)*Math.sqrt(54)),Cara:18/(Math.sqrt(42)*Math.sqrt(30))};
+const order=["Dave","Bob","Cara"];
+function predict(k,col){ const ns=order.slice(0,k); let num=0,den=0; ns.forEach(n=>{num+=sims[n]*R[n][col];den+=sims[n];}); return num/den; }
+function barRow(label,val,max,color,txt){ return '<div class="barrow"><span>'+label+'</span><div class="track"><div class="fill" style="width:'+Math.max(0,100*val/max)+'%;background:'+color+'"></div></div><span style="text-align:right">'+txt+'</span></div>'; }
+function drawK(){
+  const k=+document.getElementById("kSlider").value; document.getElementById("kOut").textContent=k;
+  document.getElementById("kPills").innerHTML=order.map((n,i)=>'<span class="pill'+(i<k?" on":"")+'">'+n+" · "+sims[n].toFixed(2)+'</span>').join("");
+  const tg=predict(k,4), ti=predict(k,3);
+  document.getElementById("kBars").innerHTML=barRow("Top Gun",tg,5,"var(--accent)",tg.toFixed(1)+" ★")+barRow("Titanic",ti,5,"var(--light)",ti.toFixed(1)+" ★");
+  state.k=k; save();
+}
+const kS=document.getElementById("kSlider"); if(state.k) kS.value=state.k; kS.addEventListener("input",drawK); drawK();
+
+/* content-based */
+const feat={"Mad Max":[1.0,0.1],"John Wick":[0.9,0.2],"The Notebook":[0.0,1.0],"Top Gun":[0.8,0.4],"Titanic":[0.3,0.9]};
+const seen={"Mad Max":true,"John Wick":true,"The Notebook":true};
+const fcol={"Mad Max":"var(--blue)","John Wick":"var(--blue)","The Notebook":"var(--light)","Top Gun":"var(--accent)","Titanic":"var(--light)"};
+document.getElementById("featBody").innerHTML=Object.entries(feat).map(([m,[a,r]])=>{
+  const rt={"Mad Max":"Rated 5","John Wick":"Rated 4","The Notebook":"Rated 1"}[m];
+  return '<tr><td>'+m+'</td><td class="n">'+a.toFixed(1)+'</td><td class="n">'+r.toFixed(1)+'</td><td><span class="tag'+(rt?"":" unseen")+'">'+(rt||"Not seen")+'</span></td></tr>';
+}).join("");
+function cos2(u,v){ const d=u[0]*v[0]+u[1]*v[1]; const n=Math.hypot(u[0],u[1])*Math.hypot(v[0],v[1]); return n?d/n:0; }
+function profile(){
+  const r={"Mad Max":+document.getElementById("rMM").value,"John Wick":+document.getElementById("rJW").value,"The Notebook":+document.getElementById("rNB").value};
+  let tot=0,p=[0,0]; Object.entries(r).forEach(([m,w])=>{tot+=w;p[0]+=w*feat[m][0];p[1]+=w*feat[m][1];});
+  return [p[0]/tot,p[1]/tot];
+}
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function drawPlot(){
+  const svg=document.getElementById("plot"); const P=profile();
+  const nA=+document.getElementById("nA").value, nR=+document.getElementById("nR").value;
+  const O=[44,300], S=260, X=v=>O[0]+v*S, Y=v=>O[1]-v*S;
+  const ink=css("--ink-2"), grid=css("--border"), acc=css("--accent");
+  let g='<defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="'+acc+'"/></marker></defs>';
+  g+='<line x1="'+O[0]+'" y1="'+O[1]+'" x2="'+(O[0]+S+40)+'" y2="'+O[1]+'" stroke="'+grid+'" stroke-width="2"/><line x1="'+O[0]+'" y1="'+O[1]+'" x2="'+O[0]+'" y2="20" stroke="'+grid+'" stroke-width="2"/>';
+  g+='<text x="'+(O[0]+S+40)+'" y="'+(O[1]+26)+'" font-size="13" fill="'+ink+'" text-anchor="end">Action</text><text x="'+(O[0]+8)+'" y="24" font-size="13" fill="'+ink+'">Romance</text>';
+  const lab={"Mad Max":[10,16,"start"],"John Wick":[-12,22,"end"],"The Notebook":[12,5,"start"],"Top Gun":[12,-8,"start"],"Titanic":[12,5,"start"]};
+  Object.entries(feat).forEach(([m,[a,r]])=>{
+    const c=css(fcol[m].slice(4,-1)); const [dx,dy,anc]=lab[m];
+    g+='<circle cx="'+X(a)+'" cy="'+Y(r)+'" r="8" fill="'+(seen[m]?c:css("--surface"))+'" stroke="'+c+'" stroke-width="3"/>';
+    g+='<text x="'+(X(a)+dx)+'" y="'+(Y(r)+dy)+'" font-size="13" font-weight="700" fill="'+c+'" text-anchor="'+anc+'">'+m+'</text>';
+  });
+  g+='<rect x="'+(X(nA)-8)+'" y="'+(Y(nR)-8)+'" width="16" height="16" rx="3" fill="none" stroke="'+css("--ink")+'" stroke-width="2.5" stroke-dasharray="4 3"/><text x="'+(X(nA)-13)+'" y="'+(Y(nR)+5)+'" font-size="12" font-weight="700" fill="'+css("--ink")+'" text-anchor="end">New</text>';
+  const L=Math.hypot(P[0],P[1])||1, len=1.05;
+  g+='<line x1="'+O[0]+'" y1="'+O[1]+'" x2="'+X(P[0]/L*len)+'" y2="'+Y(P[1]/L*len)+'" stroke="'+acc+'" stroke-width="4" stroke-linecap="round" marker-end="url(#arr)"/>';
+  g+='<text x="'+X(P[0]/L*0.5)+'" y="'+(Y(P[1]/L*0.5)-12)+'" font-size="13" font-weight="700" fill="'+acc+'" text-anchor="middle">Alice\'s profile</text>';
+  svg.innerHTML=g;
+}
+function drawNew(){
+  const nA=+document.getElementById("nA").value, nR=+document.getElementById("nR").value;
+  document.getElementById("nAo").textContent=nA.toFixed(2); document.getElementById("nRo").textContent=nR.toFixed(2);
+  const P=profile();
+  const rows=[["New movie",cos2(P,[nA,nR]),"var(--ink-2)"],["Top Gun",cos2(P,feat["Top Gun"]),"var(--accent)"],["Titanic",cos2(P,feat["Titanic"]),"var(--light)"]].sort((a,b)=>b[1]-a[1]);
+  document.getElementById("newBars").innerHTML=rows.map(([n,v,c])=>barRow(n,v,1,c,v.toFixed(2))).join("");
+  state.nA=nA; state.nR=nR; save(); drawPlot();
+}
+function drawWeights(){
+  ["rMM","rJW","rNB"].forEach(id=>{document.getElementById(id+"o").textContent=document.getElementById(id).value; state[id]=document.getElementById(id).value;});
+  const P=profile(); document.getElementById("profOut").textContent="["+P[0].toFixed(2)+", "+P[1].toFixed(2)+"]";
+  save(); drawNew();
+}
+["nA","nR"].forEach(id=>{const el=document.getElementById(id); if(state[id]!==undefined) el.value=state[id]; el.addEventListener("input",drawNew);});
+["rMM","rJW","rNB"].forEach(id=>{const el=document.getElementById(id); if(state[id]!==undefined) el.value=state[id]; el.addEventListener("input",drawWeights);});
+drawWeights();
+
+/* quiz */
+const QUIZ=[
+ {q:"Cosine similarity divides the dot product by the two lengths. What does that division remove?",o:["How enthusiastic each person is with their stars","Movies that only one person rated","The direction of each person's taste","Negative ratings"],a:0,e:"Dividing by the lengths cancels out scale, so a generous rater and a stingy rater with the same pattern of likes score as similar. Only the direction of taste is left."},
+ {q:"Two users rated only two of the same movies, and their cosine is 0.99. What is the sensible reaction?",o:["Treat them as near-twins","Trust it less, for example by shrinking the similarity toward zero","Swap to Euclidean distance","Delete one of the users"],a:1,e:"A high similarity built on very little overlap is unreliable. Requiring a minimum number of shared items, or shrinking low-overlap similarities, protects against this. This was the Dave trap."},
+ {q:"You raise k, the number of neighbours, from 2 to 50. What is the main risk?",o:["Predictions become noisier","The system cannot handle new users","Less similar people dilute the vote","Cosine values go above 1"],a:2,e:"A large k brings in people who are not actually much like the user, pulling predictions toward the crowd average. A tiny k has the opposite problem: a single neighbour can dominate."},
+ {q:"Item-based collaborative filtering compares...",o:["Rows of the ratings matrix (users)","Columns of the ratings matrix (items)","Item features such as genre and cast","Only the most popular items"],a:1,e:"Item-based compares columns: two movies are similar when the same people rate them the same way. That is how 'because you watched X' rows work, and it uses no item features at all."},
+ {q:"A brand-new film was added this morning and has no ratings. Which approach can recommend it today?",o:["User-based collaborative filtering","Item-based collaborative filtering","Content-based filtering","None of them"],a:2,e:"Content-based filtering only needs the film's features, so it works on day one. Both collaborative methods need ratings, and the film's column in the matrix is empty."},
+ {q:"Which weakness belongs to content-based filtering?",o:["It cannot handle new items","It tends to recommend more of the same","It needs thousands of other users","It cannot explain its recommendations"],a:1,e:"Because it only matches features to what you already liked, it rarely surprises you: action fans keep getting action. This is the filter bubble, and it is one reason real systems are hybrids."},
+ {q:"Alice gave The Notebook 1 star. How can her content profile make that dislike push away from romance?",o:["Weight each movie by rating minus Alice's average rating","Use more features","Increase k","Use Jaccard similarity instead"],a:0,e:"With rating minus average as the weight, a below-average rating gets a negative weight, so it actively points the profile away from that movie's features."},
+ {q:"A new model has the best RMSE you have ever measured offline. What should you do before replacing the current recommender?",o:["Ship it, because lower RMSE means better recommendations","Check ranking metrics, engineering cost, and run an online A/B test","Retrain it with a larger k","Nothing, offline results are final"],a:1,e:"RMSE is a proxy. Netflix paid $1 million for a 10% RMSE improvement and never shipped the full winning blend, because the extra accuracy did not justify the engineering effort. Lists, cost and real user behaviour decide."}
+];
+const ql=document.getElementById("quizList");
+QUIZ.forEach((item,i)=>{
+  const card=document.createElement("div"); card.className="qcard";
+  card.innerHTML='<span class="qmeta">Question '+(i+1)+' of '+QUIZ.length+'</span><h3>'+item.q+'</h3><div class="choices">'+
+    item.o.map((o,j)=>'<button class="choice" data-v="'+j+'"><span class="dot"></span><span>'+o+'</span></button>').join("")+
+    '</div><div class="fb" role="status"></div>';
+  ql.appendChild(card);
+  const ex={}; item.o.forEach((_,j)=>ex[j]=item.e);
+  wireMC(card.querySelector(".choices"),"quiz:"+i,String(item.a),card.querySelector(".fb"),ex,updateScore);
+});
+function updateScore(){
+  let ans=0,right=0; QUIZ.forEach((it,i)=>{const v=state["quiz:"+i]; if(v!==undefined){ans++; if(+v===it.a) right++;}});
+  document.getElementById("scoreNum").textContent=right+" / "+QUIZ.length;
+  let msg="Answer the questions above to see how you did.";
+  if(ans===QUIZ.length){
+    msg= right>=7 ? "Excellent. You are ready for the notebook, where these ideas run on 100,000 real ratings." :
+         right>=5 ? "Good work. Reread the explanations on the ones you missed, then try the notebook." :
+                    "Worth another pass. Revisit Parts 1 and 2, then retry the questions you missed.";
+  } else if(ans>0){ msg=ans+" of "+QUIZ.length+" answered so far."; }
+  document.getElementById("scoreMsg").textContent=msg;
+}
+
+/* restore inputs */
+Object.keys(FX).forEach(id=>{
+  const vals=state["vals:"+id];
+  if(vals) slotsOf(id).forEach((sid,k)=>{ document.getElementById(sid).value=vals[k]||""; });
+  liveUpdate(id);
+  if(vals&&state["num:"+id]) check(id,true);
+});
+
+/* active step + matrix highlight */
+const io=new IntersectionObserver(entries=>{
+  entries.forEach(en=>{ if(en.isIntersecting){
+    allSteps.forEach(s=>s.classList.remove("active")); en.target.classList.add("active");
+    if(en.target.dataset.hl) highlight(en.target.dataset.hl);
+  }});
+},{rootMargin:"-40% 0px -50% 0px"});
+allSteps.forEach(s=>io.observe(s));
+document.querySelectorAll(".step input, .step button").forEach(el=>el.addEventListener("focus",()=>{const s=el.closest(".step"); if(s.dataset.hl) highlight(s.dataset.hl);}));
+
+document.getElementById("resetBtn").addEventListener("click",()=>{
+  const theme=state.theme; state={}; if(theme) state.theme=theme; save(); location.reload();
+});
+
+updateScore(); refreshProgress();
+})();
+</script>
+</body>
+</html>
